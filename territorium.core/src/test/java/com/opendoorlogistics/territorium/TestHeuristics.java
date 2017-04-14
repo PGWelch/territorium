@@ -10,21 +10,22 @@ import java.util.Random;
 import org.junit.Test;
 
 import com.opendoorlogistics.territorium.examples.XYMinMaxQuantitiesHeterogeneousClusters;
-import com.opendoorlogistics.territorium.problem.data.Problem;
-import com.opendoorlogistics.territorium.solver.ImmutableSolution;
-import com.opendoorlogistics.territorium.solver.LocalSearch;
-import com.opendoorlogistics.territorium.solver.LocalSearch.LocalSearchConfig;
-import com.opendoorlogistics.territorium.solver.LocalSearch.LocalSearchHeuristic;
-import com.opendoorlogistics.territorium.solver.MutableSolution;
-import com.opendoorlogistics.territorium.solver.Ruin;
-import com.opendoorlogistics.territorium.solver.Ruin.RuinConfig;
-import com.opendoorlogistics.territorium.solver.Ruin.RuinType;
-import com.opendoorlogistics.territorium.solver.SolutionBank;
-import com.opendoorlogistics.territorium.solver.SolutionBank.SolutionBankConfig;
-import com.opendoorlogistics.territorium.solver.construction.RandomisedCentreSelector;
-import com.opendoorlogistics.territorium.solver.construction.RandomisedWeightBasedCustomerAssignment;
-import com.opendoorlogistics.territorium.solver.data.Cost;
-import com.opendoorlogistics.territorium.solver.data.Customer2CustomerClosestNgbMatrixImpl;
+import com.opendoorlogistics.territorium.optimiser.components.LocalSearch;
+import com.opendoorlogistics.territorium.optimiser.components.RandomisedCentreSelector;
+import com.opendoorlogistics.territorium.optimiser.components.RandomisedWeightBasedCustomerAssignment;
+import com.opendoorlogistics.territorium.optimiser.components.Ruin;
+import com.opendoorlogistics.territorium.optimiser.components.LocalSearch.LocalSearchConfig;
+import com.opendoorlogistics.territorium.optimiser.components.LocalSearch.LocalSearchHeuristic;
+import com.opendoorlogistics.territorium.optimiser.components.Ruin.RuinConfig;
+import com.opendoorlogistics.territorium.optimiser.components.Ruin.RuinType;
+import com.opendoorlogistics.territorium.optimiser.data.Cost;
+import com.opendoorlogistics.territorium.optimiser.data.Customer2CustomerClosestNgbMatrixImpl;
+import com.opendoorlogistics.territorium.optimiser.data.ImmutableSolution;
+import com.opendoorlogistics.territorium.optimiser.data.MutableSolution;
+import com.opendoorlogistics.territorium.optimiser.solver.SearchComponentsTags;
+import com.opendoorlogistics.territorium.optimiser.solver.SolutionBank;
+import com.opendoorlogistics.territorium.optimiser.solver.SolutionBank.SolutionBankConfig;
+import com.opendoorlogistics.territorium.problem.Problem;
 
 public class TestHeuristics {
 	private Random random = new Random(123);
@@ -223,7 +224,7 @@ public class TestHeuristics {
 			// Create the solution bank with the initial solution
 			SolutionBank bank = new SolutionBank(bankConfig, problem, random);
 			assertEquals(2, bank.getNbSolutionSlots());
-			bank.accept(initialSol, null);
+			bank.accept(initialSol, new SearchComponentsTags());
 			assertNotNull(bank.getSolutionSlot(0));
 			assertNotNull(bank.getSolutionSlot(1));
 
@@ -245,7 +246,7 @@ public class TestHeuristics {
 					for (int jComp = 0; jComp < bank.getNbSolutionSlots(); jComp++) {
 						MutableSolution sol = new MutableSolution(bank.getSolutionSlot(iSol));
 						ls.runSingleStep(step, bank.getComparatorForSlot(jComp), sol);
-						nbImproves += bank.accept(sol, null);
+						nbImproves += bank.accept(sol, new SearchComponentsTags());
 					}
 
 				}

@@ -10,28 +10,30 @@ import java.util.Random;
 
 import org.junit.Test;
 
-import com.opendoorlogistics.territorium.SVGWriter.XYCoordTransformer;
 import com.opendoorlogistics.territorium.examples.XYMinMaxQuantitiesHeterogeneousClusters;
-import com.opendoorlogistics.territorium.problem.data.Customer;
-import com.opendoorlogistics.territorium.problem.data.Location;
-import com.opendoorlogistics.territorium.problem.data.Problem;
-import com.opendoorlogistics.territorium.problem.data.XYLocation;
-import com.opendoorlogistics.territorium.solver.ImmutableSolution;
-import com.opendoorlogistics.territorium.solver.LocalSearch;
-import com.opendoorlogistics.territorium.solver.MutableSolution;
-import com.opendoorlogistics.territorium.solver.ProblemSplitter;
-import com.opendoorlogistics.territorium.solver.SolutionBank;
-import com.opendoorlogistics.territorium.solver.SolutionImprovementChecker;
-import com.opendoorlogistics.territorium.solver.Solver;
-import com.opendoorlogistics.territorium.solver.SolverConfig;
-import com.opendoorlogistics.territorium.solver.LocalSearch.LocalSearchConfig;
-import com.opendoorlogistics.territorium.solver.ProblemSplitter.ProblemSplitterConfig;
-import com.opendoorlogistics.territorium.solver.ProblemSplitter.Subproblem;
-import com.opendoorlogistics.territorium.solver.data.Cost;
-import com.opendoorlogistics.territorium.solver.data.Customer2CustomerClosestNgbMatrix;
-import com.opendoorlogistics.territorium.solver.data.Customer2CustomerClosestNgbMatrixImpl;
+import com.opendoorlogistics.territorium.optimiser.components.LocalSearch;
+import com.opendoorlogistics.territorium.optimiser.components.ProblemSplitter;
+import com.opendoorlogistics.territorium.optimiser.components.LocalSearch.LocalSearchConfig;
+import com.opendoorlogistics.territorium.optimiser.components.ProblemSplitter.ProblemSplitterConfig;
+import com.opendoorlogistics.territorium.optimiser.components.ProblemSplitter.Subproblem;
+import com.opendoorlogistics.territorium.optimiser.data.Cost;
+import com.opendoorlogistics.territorium.optimiser.data.Customer2CustomerClosestNgbMatrix;
+import com.opendoorlogistics.territorium.optimiser.data.Customer2CustomerClosestNgbMatrixImpl;
+import com.opendoorlogistics.territorium.optimiser.data.ImmutableSolution;
+import com.opendoorlogistics.territorium.optimiser.data.MutableSolution;
+import com.opendoorlogistics.territorium.optimiser.solver.SearchComponentsTags;
+import com.opendoorlogistics.territorium.optimiser.solver.SolutionBank;
+import com.opendoorlogistics.territorium.optimiser.solver.Solver;
+import com.opendoorlogistics.territorium.optimiser.solver.SolverConfig;
+import com.opendoorlogistics.territorium.optimiser.utils.SolutionImprovementChecker;
+import com.opendoorlogistics.territorium.problem.Customer;
+import com.opendoorlogistics.territorium.problem.Problem;
+import com.opendoorlogistics.territorium.problem.location.Location;
+import com.opendoorlogistics.territorium.problem.location.XYLocation;
 import com.opendoorlogistics.territorium.utils.Pair;
+import com.opendoorlogistics.territorium.utils.SVGWriter;
 import com.opendoorlogistics.territorium.utils.StringUtils;
+import com.opendoorlogistics.territorium.utils.SVGWriter.XYCoordTransformer;
 
 public class TestProblemSplitting {
 	private static Problem buildProblem(Random random) {
@@ -113,7 +115,7 @@ public class TestProblemSplitting {
 			}
 
 			// add SVG for the split
-			String[] colors = SVGWriter.createRandomColours(random, subproblems.size());
+			String[] colors = SVGWriter.createRandomColours( subproblems.size());
 			svgWriter.addHeader("NbSubproblems=" + nbSubProblems, 2);
 			svgWriter.addSVGHeader();
 			XYCoordTransformer transformer = new XYCoordTransformer(svgLen, problem);
@@ -157,7 +159,7 @@ public class TestProblemSplitting {
 			config.getSolutionBankConfig().setTravelTarget(false);
 			bank = new SolutionBank(config.getSolutionBankConfig(), problem, random);
 			solver = new Solver(problem, config, null, random);
-			bank.accept(solution, null);
+			bank.accept(solution, new SearchComponentsTags());
 			assertEquals("Should only be using main solution", 1, bank.getNbSolutionSlots());
 		}
 
@@ -330,7 +332,7 @@ public class TestProblemSplitting {
 						+ recombined.getCost().toSingleLineSummary());
 
 				// Add the recombined solution too
-				main.bank.accept(recombined,null);
+				main.bank.accept(recombined,new SearchComponentsTags());
 
 			}
 

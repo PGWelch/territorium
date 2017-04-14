@@ -4,18 +4,18 @@ import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import com.opendoorlogistics.territorium.SVGWriter;
-import com.opendoorlogistics.territorium.problem.data.ArrayBasedTravelMatrix;
-import com.opendoorlogistics.territorium.problem.data.Cluster;
-import com.opendoorlogistics.territorium.problem.data.Customer;
-import com.opendoorlogistics.territorium.problem.data.DistanceTime;
-import com.opendoorlogistics.territorium.problem.data.Problem;
-import com.opendoorlogistics.territorium.problem.data.XYLocation;
-import com.opendoorlogistics.territorium.solver.ContinueCallback;
-import com.opendoorlogistics.territorium.solver.ImmutableSolution;
-import com.opendoorlogistics.territorium.solver.Solver;
-import com.opendoorlogistics.territorium.solver.SolverConfig;
-import com.opendoorlogistics.territorium.solver.SolverStateSummary;
+import com.opendoorlogistics.territorium.optimiser.data.ImmutableSolution;
+import com.opendoorlogistics.territorium.optimiser.solver.ContinueCallback;
+import com.opendoorlogistics.territorium.optimiser.solver.Solver;
+import com.opendoorlogistics.territorium.optimiser.solver.SolverConfig;
+import com.opendoorlogistics.territorium.optimiser.solver.SolverStateSummary;
+import com.opendoorlogistics.territorium.problem.ArrayBasedTravelMatrix;
+import com.opendoorlogistics.territorium.problem.Cluster;
+import com.opendoorlogistics.territorium.problem.Customer;
+import com.opendoorlogistics.territorium.problem.DistanceTime;
+import com.opendoorlogistics.territorium.problem.Problem;
+import com.opendoorlogistics.territorium.problem.location.XYLocation;
+import com.opendoorlogistics.territorium.utils.SVGWriter;
 import com.opendoorlogistics.territorium.utils.StringUtils;
 
 public class XYMinMaxQuantitiesHeterogeneousClusters {
@@ -103,31 +103,19 @@ public class XYMinMaxQuantitiesHeterogeneousClusters {
 	//		LOGGER.info("Created customer with quantity " + customer.getQuantity() + " at x=" + xyLocation.getX() + " y=" + xyLocation.getY());
 		}
 		
-		// create matrix
-		ArrayBasedTravelMatrix matrix = new ArrayBasedTravelMatrix(locIndx-1);
-		for(Customer from : problem.getCustomers()){
-			XYLocation xyFrom = (XYLocation)from.getLocation();
-			for(Customer to : problem.getCustomers()){
-				XYLocation xyTo = (XYLocation)to.getLocation();		
-				DistanceTime dt = new DistanceTime();
-				double dx = xyFrom.getX() - xyTo.getX();
-				double dy = xyFrom.getY() - xyTo.getY();
-				dt.setDistance(Math.sqrt(dx*dx+dy*dy));
-				dt.setTime(dt.getDistance());
-				matrix.set(xyFrom.getIndex(), xyTo.getIndex(), dt);
-			}		
-		}
-		problem.setTravelMatrix(matrix);
-		
 		// create input clusters
 		double totalCapacity = sumQuantity * totalClusterCapacityMultiplier;
 		double totalMin = sumQuantity * totalClusterMinQuantityMultiplier;
 		for(int i =0 ; i< nbClusters ; i++){
 			Cluster cluster = new Cluster();
 			cluster.setMinQuantity(totalMin/nbClusters);
-			cluster.setCapacity(totalCapacity/nbClusters);
+			cluster.setMaxQuantity(totalCapacity/nbClusters);
 			problem.getClusters().add(cluster);
 		}
+
+		// create matrix
+		ArrayBasedTravelMatrix matrix =ArrayBasedTravelMatrix.buildForXYProblem(problem, 1);
+		problem.setTravelMatrix(matrix);
 		
 		return problem;
 	}
@@ -137,7 +125,7 @@ public class XYMinMaxQuantitiesHeterogeneousClusters {
 		
 		// keep same problem
 		Random random = new Random(123);
-		Problem problem = new XYMinMaxQuantitiesHeterogeneousClusters().setNbCustomers(2000).setNbClusters(50).build(random);
+		Problem problem = new XYMinMaxQuantitiesHeterogeneousClusters().setNbCustomers(500).setNbClusters(10).setTotalClusterCapacityMultiplier(1.05).setTotalClusterMinQuantityMultiplier(0.95).build(random);
 	
 		// seed solver differently each time
 		random = new Random();
@@ -148,9 +136,10 @@ public class XYMinMaxQuantitiesHeterogeneousClusters {
 				System.out.println(
 					LocalDateTime.now().toString() + " - "
 				+ stateSummary.getNbOuterSteps() +" - "
-				+ 	(stateSummary.getBestSolution()!=null?stateSummary.getBestSolution().getCost().toSingleLineSummary() + " from " + stateSummary.getBestSolutionSource() + ", ":"")
+				+ "soln #" + stateSummary.getBestSolutionNb() +" "
+				+ 	(stateSummary.getBestSolution()!=null?stateSummary.getBestSolution().getCost().toSingleLineSummary() + " from " + stateSummary.getBestSolutionTags() + ", ":"")
 			 + stateSummary.getOperationsStack().toString());
-				return stateSummary.getNbOuterSteps() < 1000? ContinueOption.KEEP_GOING: ContinueOption.FINISH_NOW;
+				return stateSummary.getNbOuterSteps() < 100? ContinueOption.KEEP_GOING: ContinueOption.FINISH_NOW;
 			}
 		}, random);
 		
