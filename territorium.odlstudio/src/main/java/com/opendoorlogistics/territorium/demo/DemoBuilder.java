@@ -54,8 +54,9 @@ public class DemoBuilder {
 		ODLTable customersTable = ioDb.getTableAt(0);
 		Tables tables= api.tables();
 		tables.clearTable(customersTable);
-		BeanTableMapping btm = tables.mapBeanToTable(ODLBeanCustomer.class);
 		double sumQuantity=0;
+		
+		List<ODLBeanCustomer> customers = new ArrayList<>();
 		for(int i =0 ; i <ncust ; i++){
 			ODLBeanCustomer customer = new ODLBeanCustomer();
 			customer.setId(Integer.toString(i+1));
@@ -64,15 +65,16 @@ public class DemoBuilder {
 			DemoLatLong ll = addresses.position(indices.get(i));
 			customer.setLatitude(ll.getLatitude());
 			customer.setLongitude(ll.getLongitude());
-			double quantity = 1+ Math.round(random.nextDouble()*random.nextDouble()*99);
+			double quantity = 1+ Math.round(random.nextDouble()*99);
 			customer.setQuantity(quantity);
 			sumQuantity += quantity;
-			btm.writeObjectToTable(customer, customersTable);
+			customers.add(customer);
+		//	btm.writeObjectToTable(customer, customersTable);
 		}
 		
 		if(config.isUseInputClusterTable()){
 			ODLTable clustersTable = ioDb.getTableAt(1);
-			btm = tables.mapBeanToTable(ODLBeanCluster.class);
+			BeanTableMapping btm = tables.mapBeanToTable(ODLBeanCluster.class);
 			tables.clearTable(clustersTable);
 			if(demoConfig.nbClusters>0){
 				double meanQuantity = sumQuantity / demoConfig.nbClusters;
@@ -87,7 +89,16 @@ public class DemoBuilder {
 				
 			}
 		
+		}else{
+			// renormalise customer quantity so we are at 80% of available capacity
+			double availableCapacity = config.getNumberClusters() * config.getMaxClusterQuantity();
+			double factor = availableCapacity / sumQuantity;
+			customers.forEach(c->c.setQuantity(Math.round(c.getQuantity()*factor)));
 		}
+		
+		// write customers to table
+		BeanTableMapping btm = tables.mapBeanToTable(ODLBeanCustomer.class);		
+		customers.forEach(c->btm.writeObjectToTable(c, customersTable));
 
 	}
 }

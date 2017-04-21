@@ -16,8 +16,8 @@ import com.opendoorlogistics.api.distances.DistancesConfiguration;
 
 @XmlRootElement(name = "CapacitatedClustererConfig")
 final public class CapClusterConfig implements Serializable {
-	private int maxSecondsOptimization = 60;
-	private int maxStepsOptimization = 100;
+	private int maxSecondsOptimization = 120;
+	private int maxStepsOptimization = 250;
 	private boolean useInputClusterTable; 
 	private int numberClusters  =10;
 	private double minClusterQuantity=0;
