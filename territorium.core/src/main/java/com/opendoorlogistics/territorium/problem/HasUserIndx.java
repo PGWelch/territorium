@@ -1,18 +1,18 @@
 package com.opendoorlogistics.territorium.problem;
 
 public class HasUserIndx {
-	private int externalIndex;
+	private long externalIndex;
 
 	/**
 	 * The external index is not read or used by the solver.
 	 * Use it to connect up data etc.
 	 * @return
 	 */
-	public int getUserIndex() {
+	public long getUserIndex() {
 		return externalIndex;
 	}
 
-	public void setUserIndex(int externalIndex) {
+	public void setUserIndex(long externalIndex) {
 		this.externalIndex = externalIndex;
 	}
 	

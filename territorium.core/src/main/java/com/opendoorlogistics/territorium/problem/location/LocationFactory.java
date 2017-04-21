@@ -5,7 +5,7 @@ import java.util.HashMap;
 import com.opendoorlogistics.territorium.utils.Pair;
 
 public abstract class LocationFactory<T extends Location> {
-	private HashMap<Pair<Double, Double>, T> preexisting = new HashMap<>();
+	protected HashMap<Pair<Double, Double>, T> preexisting = new HashMap<>();
 
 	protected T internalCreateOrGet(double a, double b){
 		Pair<Double, Double> pair = new Pair<Double, Double>(a,b);
@@ -19,4 +19,8 @@ public abstract class LocationFactory<T extends Location> {
 	}
 	
 	protected abstract T internalCreateNew(double a, double b);
+	
+	public int getMaxLocationIndex(){
+		return preexisting.size()-1;
+	}
 }

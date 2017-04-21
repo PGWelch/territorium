@@ -2,6 +2,7 @@ package com.opendoorlogistics.territorium.optimiser.solver;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Random;
 import java.util.Stack;
@@ -50,7 +51,7 @@ public class Solver {
 	}
 
 	public void constructNewSolution(SolverStateSummaryImpl state) {
-		state.push("Constructing new solution");
+		//state.push("Create new sol");
 
 		// choose comparator at random
 		CostComparatorWithTags comparator = state.bank
@@ -59,7 +60,7 @@ public class Solver {
 		MutableSolution ret = null;
 		if (random.nextBoolean()) {
 
-			state.push("Constructing new solution using randomised weighted");
+			state.push("Create new sol using randomised weighted");
 			ret = constructRandWeightBasedPlusLocalSearchSingleStepSol(comparator);
 			source.addTags(TagType.RAND_WEIGHT_LS_CONSTRUCT).addTags(comparator.getTags());
 			state.bank.accept(ret, source);
@@ -67,7 +68,7 @@ public class Solver {
 		} else {
 
 			// construct 100% using local search
-			state.push("Constructing new solution using local search");
+			state.push("Create new sol using local search");
 			ret = localSearch.constructNewSolution(comparator);
 			source.addTags(TagType.LS_CONSTRUCT).addTags(comparator.getTags());
 			state.bank.accept(ret, source);
@@ -75,12 +76,11 @@ public class Solver {
 		}
 
 		// Now run until stagnation (should we swap between slots at this point???)
-		state.push("Improving new solution");
+		state.push("Improving new sol");
 		source.addTag(TagType.LS_OPT);
 		runUntilLocalOptimum(state, comparator, localSearch, ret, s -> state.bank.accept(s, source));
 		state.pop();
 
-		state.pop();
 
 	}
 
@@ -98,7 +98,7 @@ public class Solver {
 	}
 
 	public ImmutableSolution solve(int[] startingAssignment) {
-
+		
 		// create initial solution object using input if we have it
 		MutableSolution initialSol = null;
 		// for (int i = 0; i < 100; i++) {
@@ -108,17 +108,22 @@ public class Solver {
 			initialSol = new MutableSolution(problem, null);
 		}
 
+		// Just return an empty solution if nothing is assignable as later heuristics will throw exceptions
+		if(problem.getCustomers().size()==0 || problem.getClusters().size()==0){
+			return initialSol;
+		}
+		
 		SolverStateSummaryImpl state = new SolverStateSummaryImpl(
 				new SolutionBank(config.getSolutionBankConfig(), problem, random));
 
-		state.push("Constructing initial solution");
+		state.push("Create first solution");
 		CostComparatorWithTags stdCmp = state.bank.getStandardComparator();
 		localSearch.assignUnassignedCustomers(stdCmp, initialSol);
 		state.bank.accept(initialSol, new SearchComponentsTags(TagType.INITIAL_CONSTRUCT).addTags(stdCmp.getTags()));
 		state.pop();
 
 		if (state.isContinue()) {
-			state.push("Improving initial solution");
+			state.push("Improving first solution");
 			runUntilLocalOptimum(state, stdCmp, localSearch, initialSol, s -> state.bank.accept(s,
 					new SearchComponentsTags(TagType.INITIAL_LSOPT).addTags(stdCmp.getTags())));
 			state.pop();
@@ -136,6 +141,7 @@ public class Solver {
 	private class SolverStateSummaryImpl implements SolverStateSummary {
 		final SolutionBank bank;
 		private boolean keepGoing = true;
+		private DoubleSummaryStatistics outerStepTimingsSecs = new DoubleSummaryStatistics();
 
 		SolverStateSummaryImpl(SolutionBank bank) {
 			this.bank = bank;
@@ -187,6 +193,11 @@ public class Solver {
 		public long getBestSolutionNb() {
 			return bank.getStandardSolutionNb();
 		}
+
+		@Override
+		public DoubleSummaryStatistics getOuterStepTimingsInSeconds() {
+			return outerStepTimingsSecs;
+		}
 	}
 
 	public void runSingleOuterStep(SolutionBank bank) {
@@ -194,11 +205,15 @@ public class Solver {
 	}
 
 	private void runSingleOuterStep(SolverStateSummaryImpl state) {
+		long start = System.currentTimeMillis();
 		if (random.nextDouble() < config.getNewSolutionFraction()) {
 			constructNewSolution(state);
 		} else {
 			ruinRecreateWithSplits(state);
 		}
+		long end = System.currentTimeMillis();
+		double durationSecs = 0.001*(end - start);
+		state.getOuterStepTimingsInSeconds().accept(durationSecs);
 
 	}
 
@@ -222,12 +237,15 @@ public class Solver {
 		}
 		state.pop();
 
+		
+		state.push("Improving recreated");
 		if (state.isContinue()) {
 			runUntilLocalOptimum(state, comparator, localSearch, newSol, localSearchStepListener);
 		}
-		// state.pop();
-
 		state.pop();
+		
+		state.pop();
+
 		return newSol;
 	}
 
@@ -258,7 +276,7 @@ public class Solver {
 		}
 
 		// Split problems
-		state.push("Running split");
+		state.push("Split");
 		ProblemSplitter splitter = new ProblemSplitter(problem, random, config.getProblemSplitterConfig());
 		List<Subproblem> subproblems = splitter.splitIntoSubproblems(random, initialSol.getCustomersToClusters(),
 				nbSubproblems, customer2CustomerClosestNgbMatrix);
@@ -303,13 +321,19 @@ public class Solver {
 		while (improved && keepGoing) {
 
 			// check for user cancellation, updating message before cancellation
-			state.push("LocalSearch" + new SearchComponentsTags(comparator.getTags()).getSummary() + " step "
-					+ innerStep + " (" + newSol.getCost().toSingleLineSummaryNoBrackets() + ")");
+			state.push("LocalSearch step "	+ innerStep );
 			keepGoing = state.isContinue();
 
 			// run single step of local search
+			state.push("");
 			improved = localSearch.runSingleStep(innerStep++, comparator, newSol);
-
+			localSearch.setContinueLocalSearchCallback(s->{
+				state.pop();
+				state.push(s);
+				return state.isContinue();
+			});
+			state.pop();
+			
 			if (stepEndedListener != null) {
 				stepEndedListener.accept(newSol);
 			}

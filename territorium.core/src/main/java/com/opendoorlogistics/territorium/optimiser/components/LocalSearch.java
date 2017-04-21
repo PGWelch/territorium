@@ -23,6 +23,7 @@ public class LocalSearch {
 	private final Problem problem;
 	private final LocalSearchConfig config;
 	private final Random random;
+	private ContinueLocalSearchCallback continueLocalSearchCallback;
 //	private final LocalSearchContinueCallback cont;
 //	private final Comparator<Cost> comparator = Cost.createApproxEqualComparator();
 	private final Customer2CustomerClosestNgbMatrix closestNeighboursMatrix;
@@ -224,13 +225,19 @@ public class LocalSearch {
 	 * @param solution
 	 */
 	private void nearestCustomerMoves(int step, Comparator<Cost> comparator,MutableSolution solution){
+		if(!isContinue("NearCustMoves")){
+			return;
+		}
+		
 		if(!config.isCustomerNearestNeighbourSwaps()){
 			return;
 		}
 		
 		Cost newCost = new Cost();
 		
+		long lastCallbackTime=-1;
 		boolean [] clusterTried = new boolean[problem.getClusters().size()];
+		int nbDone=0;
 		for(int customerIndx: NumberUtils.getRandomOrder0ToNArray(random, problem.getCustomers().size()-1)){
 			int nbNearest = closestNeighboursMatrix.getNbClosestNeighbours(customerIndx);
 			
@@ -257,6 +264,16 @@ public class LocalSearch {
 				if(nbClustersTried>config.getInterchangeNNearest()){
 					break;
 				}
+			}
+			
+			nbDone++;
+			
+			// do callback if its been over a second
+			if(System.currentTimeMillis() - lastCallbackTime > 1000){
+				if(!isContinue("Customer " + nbDone +"/" + problem.getCustomers().size())){
+					break;
+				}
+				lastCallbackTime = System.currentTimeMillis();
 			}
 		}
 	}
@@ -285,7 +302,15 @@ public class LocalSearch {
 		return checker.isImproved(solution);
 	}
 
+	public static interface ContinueLocalSearchCallback{
+		boolean continueSearch(String currentOperation);
+	}
+	
 	private void nearestClusterSearch(int step,Comparator<Cost> comparator, MutableSolution solution) {
+		if(!isContinue("NearClusterSearch")){
+			return;
+		}
+		
 		// calculate a cluster to cluster distance matrix using the minimum distance to
 		// a point in another cluster
 		int p = problem.getClusters().size();
@@ -349,8 +374,10 @@ public class LocalSearch {
 
 
 		// loop over each cluster taking first improving moves
+		long lastCallbackTime = -1;
 		for (int i = 0; i < p; i++) {
 			int cli = list.get(i);
+
 
 			// shuffle its nearest clusters
 			List<Integer> nearest = nearestLists.get(cli);
@@ -376,50 +403,16 @@ public class LocalSearch {
 			// refresh solution after processing each cluster to help prevent round-off
 			solution.update();
 
-	
+			// do callback if its been over a second
+			if(System.currentTimeMillis() - lastCallbackTime > 1000){
+				if(!isContinue("Cluster " + (i+1) +"/" + p)){
+					break;
+				}
+				lastCallbackTime = System.currentTimeMillis();
+			}
+			
 		}
 	}
-
-//	private void intelligentSwaps(int [] assignments){
-//		MutableLocalSearchSolution solution = new MutableLocalSearchSolution(problem, assignments);
-//		Location [] centres = solution.getClusterCentres();
-//		CustomerClusterCostMatrix matrix = new CustomerClusterCostMatrix(problem, centres);
-//		
-//		TIntArrayList clusterList = new TIntArrayList();
-//		int p = problem.getClusters().size();
-//		for(int i =0 ; i<p;i++){
-//			clusterList.add(i);
-//		}
-//		
-//		// Loop over each customer in random order
-//		int nc = problem.getCustomers().size();
-//		for(int customerIndx:Utils.getRandomOrder0ToNArray(random, nc-1)){
-//			
-//			// TODO get closest n clusters (maintain record of these)
-//			// Try moving customer to closest n clusters.
-//			// Try swaps...
-//			
-//			// Loop over each cluster in random order OR SHOULD THIS BE CLOSEST FIRST??
-//			clusterList.shuffle(random);
-//			for(int i =0 ; i<p;i++){
-//				int clusterIndx = clusterList.get(i);
-//				
-//				// Are we closer to this cluster centre than our own?
-//				// OR does this cluster have too few quantity?
-//				// OR do we have too much quantity?
-//				// OR some quantity violation which could be sorted by a swap??
-//			}
-//		}
-//		
-//		// Sort customers by difference between nearest cluster and assigned cluster. Use binary heap?
-//		
-//		// Try swapping and moving with any nearer cluster (try moving first)
-//		
-//		// Don't try moves to clusters which won't improve quantity violation if they're further?
-//		
-//		// For improving quantity violation, take the best move with any improvement?
-//	}
-	
 	private void interclusterSwaps(Comparator<Cost> comparator,Random random, int clusteri, int clusterj, MutableSolution solution) {
 		if(!config.isInterclusterSwaps()){
 			return;
@@ -478,6 +471,15 @@ public class LocalSearch {
 		}
 	}
 
+
+	public void setContinueLocalSearchCallback(ContinueLocalSearchCallback continueLocalSearchCallback) {
+		this.continueLocalSearchCallback = continueLocalSearchCallback;
+	}
+
+	private boolean isContinue(String currentOperation){
+		return continueLocalSearchCallback!=null?continueLocalSearchCallback.continueSearch(currentOperation):true;
+	}
+	
 //	private ContinueOption getContinue(int step, ImmutableSolution best, HeuristicType currentHeuristic) {
 //		if(cont==null){
 //			return ContinueOption.KEEP_GOING;
@@ -494,4 +496,5 @@ public class LocalSearch {
 //		return ret;
 //	}
 
+	
 }

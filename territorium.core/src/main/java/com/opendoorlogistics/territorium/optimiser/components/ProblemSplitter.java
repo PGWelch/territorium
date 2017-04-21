@@ -195,12 +195,12 @@ public class ProblemSplitter {
 			ArrayList<Customer> newCustomers = new ArrayList<>();			
 			ArrayList<Cluster> newClusters= new ArrayList<>();			
 			for(int j = 0 ; j<originalClusterIndices.size(); j++){
-				int originalClusterIndx =splitProblem.getCustomers().get(originalClusterIndices.get(j)).getUserIndex();
+				long originalClusterIndx =splitProblem.getCustomers().get(originalClusterIndices.get(j)).getUserIndex();
 				int newClusterIndx = j;
 				
 				// process customers and assignments
 				originalCustomerIndices.clear();
-				originalSol.getCustomers(originalClusterIndx, originalCustomerIndices);
+				originalSol.getCustomers((int)originalClusterIndx, originalCustomerIndices);
 				for(int k=0;k<originalCustomerIndices.size() ; k++){
 					int originalCustomerIndx = originalCustomerIndices.get(k);
 					newProblem.getNewToOriginalCustomerIndices()[newCustomers.size()]= originalCustomerIndx;
@@ -212,8 +212,8 @@ public class ProblemSplitter {
 				}
 				
 				// process cluster record
-				Cluster cluster = problem.getClusters().get(originalClusterIndx);
-				newProblem.getNewToOriginalClusterIndices()[newClusters.size()]= originalClusterIndx;
+				Cluster cluster = problem.getClusters().get((int)originalClusterIndx);
+				newProblem.getNewToOriginalClusterIndices()[newClusters.size()]= (int)originalClusterIndx;
 				newClusters.add(cluster);
 			}
 			

@@ -8,7 +8,7 @@ package com.opendoorlogistics.territorium.problem;
 
 import com.opendoorlogistics.territorium.problem.location.Location;
 
-final public class Cluster extends HasUserIndx{
+public class Cluster extends HasUserIndx{
 	private double maxQuantity=1;
 	private double minQuantity;
 	private boolean fixCentreToTarget;

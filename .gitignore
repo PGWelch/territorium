@@ -48,3 +48,6 @@ Temporary Items
 territorium.core/.settings/org.eclipse.jdt.core.prefs
 territorium.core/.settings/org.eclipse.m2e.core.prefs
 territorium.core/.project
+territorium.odlstudio/.settings/org.eclipse.jdt.core.prefs
+territorium.odlstudio/.settings/org.eclipse.m2e.core.prefs
+territorium.odlstudio/src/main/resources/resources/data/France.old

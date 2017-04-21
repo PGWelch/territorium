@@ -25,8 +25,41 @@ public class Problem extends ObjectWithJSONToString{
 	}
 
 	public double getTravelCost(Location clusterLocation, Customer customer) {
-		DistanceTime dt = travelMatrix.get(clusterLocation.getIndex(), customer.getLocation().getIndex());
+		DistanceTime dt = getTravel(clusterLocation, customer);
 		return dt.getDistance() * customer.getCostPerUnitDistance() + dt.getTime() * customer.getCostPerUnitTime();
+	}
+
+	/**
+	 * 
+	 * @param clusterCentre Can be null (null is returned)
+	 * @param cluster
+	 * @return
+	 */
+	public DistanceTime getTargetToCentreTravel(Location clusterCentre, Cluster cluster){
+		if (clusterCentre != null && cluster.getTargetCentre() != null) {
+			return getTravelMatrix().get(cluster.getTargetCentre().getIndex(), clusterCentre.getIndex());
+		}
+		return null;
+	}
+
+	/**
+	 * 
+	 * @param clusterCentre
+	 * @param cluster Can be null (0 is returned)
+	 * @return
+	 */
+	public double getTargetToCentreTravelCost(Location clusterCentre, Cluster cluster){
+		DistanceTime dt = getTargetToCentreTravel(clusterCentre, cluster);
+		if(dt!=null){
+			return cluster.getTargetCentreCostPerUnitDistance() * dt.getDistance()
+					+ cluster.getTargetCentreCostPerUnitTime() * dt.getTime();
+		}
+		return 0;
+	}
+
+	public DistanceTime getTravel(Location clusterLocation, Customer customer) {
+		DistanceTime dt = travelMatrix.get(clusterLocation.getIndex(), customer.getLocation().getIndex());
+		return dt;
 	}
 
 	public List<Customer> getCustomers() {

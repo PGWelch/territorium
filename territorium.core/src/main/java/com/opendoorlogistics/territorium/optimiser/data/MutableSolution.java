@@ -178,12 +178,13 @@ final public class MutableSolution implements ImmutableSolution {
 
 			// Add travel cost to the reference location if set
 			Location centre = getCentre();
-			if (centre != null && cluster.getTargetCentre() != null) {
-				DistanceTime dt = problem.getTravelMatrix().get(cluster.getTargetCentre().getIndex(), centre.getIndex());
-				double refCost = cluster.getTargetCentreCostPerUnitDistance() * dt.getDistance()
-						+ cluster.getTargetCentreCostPerUnitTime() * dt.getTime();
-				cost.setTravel(cost.getTravel() + refCost);
-			}
+			cost.setTravel(cost.getTravel() + problem.getTargetToCentreTravelCost(centre, cluster));
+//			if (centre != null && cluster.getTargetCentre() != null) {
+//				DistanceTime dt = problem.getTravelMatrix().get(cluster.getTargetCentre().getIndex(), centre.getIndex());
+//				double refCost = cluster.getTargetCentreCostPerUnitDistance() * dt.getDistance()
+//						+ cluster.getTargetCentreCostPerUnitTime() * dt.getTime();
+//				cost.setTravel(cost.getTravel() + refCost);
+//			}
 
 			// Calculate capacity violation
 			cost.setQuantityViolation(QuantityUtils.getAbsQuantityViolation(cluster, quantity));
@@ -717,6 +718,11 @@ final public class MutableSolution implements ImmutableSolution {
 	@Override
 	public int getNbCustomers(int clusterIndx) {
 		return clusters[clusterIndx].assignedCustomers.size();
+	}
+
+	@Override
+	public Cost getClusterCost(int clusterIndx) {
+		return clusters[clusterIndx].cost;
 	}
 
 }

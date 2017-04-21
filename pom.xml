@@ -1,0 +1,41 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.opendoorlogistics</groupId>
+	<artifactId>territorium</artifactId>
+	<version>1.0.0</version>
+	<packaging>pom</packaging>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.12.4</version>
+				<configuration>
+					<!-- Skip running unit tests by default -->				
+					<skipTests>true</skipTests>
+				</configuration>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.3</version>
+				<configuration>
+					<!-- Set the java version, otherwise is defaults to one that's too old when we open it in Eclipse-->				
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+	  
+		</plugins>
+	</build>
+
+	<modules>
+        <module>territorium.core</module>
+        <module>territorium.odlstudio</module>
+    </modules>
+
+
+</project>

@@ -27,7 +27,7 @@ public class Customer2CustomerClosestNgbMatrixImpl implements Customer2CustomerC
 				costs[j] = problem.getTravelCost(from, customers.get(j));
 			}
 			
-			tmpList.sort((k,l)->costs[k]<costs[l]?-1:+1);
+			tmpList.sort((k,l)->Double.compare(costs[k],costs[l]));
 			closestNeighbours[i] = new int[n];
 			for(int j =0 ; j<n;j++){
 				closestNeighbours[i][j] = tmpList.get(j);

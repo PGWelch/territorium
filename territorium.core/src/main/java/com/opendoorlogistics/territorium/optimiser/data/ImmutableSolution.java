@@ -34,7 +34,9 @@ public interface ImmutableSolution {
 	Location[] getClusterCentres();
 	
 	double getClusterQuantity(int clusterIndx);
-	
+
+	Cost getClusterCost(int clusterIndx);
+
 	//double getQuantity(int clusterIndx);
 
 	int getNbUnassignedCustomers();
