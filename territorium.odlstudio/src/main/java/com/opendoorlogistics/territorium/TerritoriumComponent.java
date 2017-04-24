@@ -6,7 +6,6 @@
  ******************************************************************************/
 package com.opendoorlogistics.territorium;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.io.Serializable;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
@@ -71,6 +69,9 @@ import com.opendoorlogistics.territorium.problem.location.LatLongLocation;
 import com.opendoorlogistics.territorium.problem.location.LatLongLocation.LatLongLocationFactory;
 import com.opendoorlogistics.territorium.problem.location.Location;
 
+import net.xeoh.plugins.base.annotations.PluginImplementation;
+
+@PluginImplementation
 final public class TerritoriumComponent implements ODLComponent {
 	public static final String UNASSIGNED = "UNASSIGNED";
 	static final String COMPONENT_ID = "com.opendoorlogistics.components.territorium";
@@ -78,34 +79,7 @@ final public class TerritoriumComponent implements ODLComponent {
 	static final int MODE_UPDATE_OUTPUT_TABLES_ONLY= CONTINUE_OPTIMISATION_MODE + 1;
 //	static final int MODE_UPDATE_TABLES= MODE_UPDATE_SOLUTION_FOR_DISPLAY + 1;
 	static final int MODE_BUILD_DEMO = MODE_UPDATE_OUTPUT_TABLES_ONLY + 1;
-	static final TreeMap<String, Color>PREDEFINED_COLOURS_BY_NUMBER_STRING = new TreeMap<>();
-	static{
-		// See http://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
-		String [] scols = new String[]{
-				"0x800000",
-				"0xFF0000",
-				"0xFFC9DE",
-				"0xAA6E28",
-				"0xFF9900",
-				"0xFFD8B1",
-				"0x808000",
-				"0xFFEA00",
-				"0xBEFF00",
-				"0x00BE00",
-				"0xAAFFC3",
-				"0x008080",
-				"0x64FFFF",
-				"0x000080",
-				"0x4385FF",
-				"0x820096",
-				"0xFF00FF",
-				"0x808080",
-		};
-		for(int i=0;i<scols.length;i++){
-			PREDEFINED_COLOURS_BY_NUMBER_STRING.put(Integer.toString(i), Color.decode(scols[i]));
-		}
-	}
-	
+
 	@Override
 	public String getId() {
 		return COMPONENT_ID;
@@ -254,7 +228,7 @@ final public class TerritoriumComponent implements ODLComponent {
 			if (cluster.getDisplayColour() == null) {
 				if (!conventions.isEmptyStandardised(cluster.getId())) {
 					// see if we have one predefined for a number
-					cluster.setDisplayColour(PREDEFINED_COLOURS_BY_NUMBER_STRING.get(cluster.getId()));
+					cluster.setDisplayColour(Utils.PREDEFINED_COLOURS_BY_NUMBER_STRING.get(cluster.getId()));
 					
 					// otherwise choose at random based on the cluster id string
 					if(cluster.getDisplayColour()==null){
@@ -263,7 +237,7 @@ final public class TerritoriumComponent implements ODLComponent {
 					}
 				} else {
 					// choose at random based on the index
-					cluster.setDisplayColour(PREDEFINED_COLOURS_BY_NUMBER_STRING.get(Integer.toString(i)));
+					cluster.setDisplayColour(Utils.PREDEFINED_COLOURS_BY_NUMBER_STRING.get(Integer.toString(i)));
 
 					if(cluster.getDisplayColour()==null){
 						random.setSeed(i * 31 + 5);

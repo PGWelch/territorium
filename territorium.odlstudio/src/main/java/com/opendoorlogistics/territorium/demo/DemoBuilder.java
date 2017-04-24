@@ -6,6 +6,7 @@
  ******************************************************************************/
 package com.opendoorlogistics.territorium.demo;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -81,7 +82,10 @@ public class DemoBuilder {
 				for(int i =0 ; i<demoConfig.nbClusters ; i++){
 					ODLBeanCluster cluster = new ODLBeanCluster();
 					cluster.setId(Integer.toString(i+1));
-					cluster.setDisplayColour(Utils.randomColour(random));
+					cluster.setDisplayColour(Utils.PREDEFINED_COLOURS_BY_NUMBER_STRING.get(Integer.toString(i)));
+					if(cluster.getDisplayColour()==null){
+						cluster.setDisplayColour(Utils.randomColour(random));						
+					}
 					cluster.setMinQuantity(Math.floor(meanQuantity * 0.7));
 					cluster.setMaxQuantity(Math.ceil(meanQuantity * 1.3));
 					btm.writeObjectToTable(cluster, clustersTable);
