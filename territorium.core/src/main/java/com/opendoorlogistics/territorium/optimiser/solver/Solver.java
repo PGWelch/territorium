@@ -294,10 +294,22 @@ public class Solver {
 			Ruin spRuin = new Ruin(subproblem.getProblem(), config.getRuinConfig(), random);
 			LocalSearch spLocalSearch = new LocalSearch(subproblem.getProblem(), config.getLocalSearchConfig(),
 					subproblem.getCustomer2CustomerClosestNgbMatrix(), random);
-			CostComparatorWithTags comparator = bank.getComparatorForSlot(random.nextInt(bank.getNbSolutionSlots()));
+
+			// the subproblem should have its own solution bank we accept and reject from 
+			SolutionBank subproblemSolutionBank = new SolutionBank(config.getSolutionBankConfig(), subproblem.getProblem(), random);
+			subproblemSolutionBank.accept(subproblem.getSolution(), new SearchComponentsTags());
+			CostComparatorWithTags comparator = subproblemSolutionBank.getComparatorForSlot(random.nextInt(subproblemSolutionBank.getNbSolutionSlots()));
+			
+			// get new sol and accept/reject it by placing in the bank
 			ImmutableSolution newSpSol = ruinRecreate(state, subproblem.getSolution(), spRuin, spLocalSearch,
 					comparator, null);
+			subproblemSolutionBank.accept(newSpSol, new SearchComponentsTags().addTags(comparator.getTags()));
+			newSpSol = subproblemSolutionBank.getStandardSol();
 
+//			CostComparatorWithTags comparator = bank.getComparatorForSlot(random.nextInt(bank.getNbSolutionSlots()));			
+//			ImmutableSolution newSpSol = ruinRecreate(state, subproblem.getSolution(), spRuin, spLocalSearch,
+//					comparator, null);
+					
 			// see if we have an improving solution (log individually for each subproblem - helps to analyse the
 			// algorithm)
 			subproblemSolutions.get(i).setB(newSpSol);

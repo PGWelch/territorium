@@ -15,8 +15,11 @@ public class SearchComponentsTags {
 	}
 	
 	public SearchComponentsTags(SearchComponentsTags deepCopyThis){
-		for(TagType type : deepCopyThis.getTags()){
-			addTag(type);
+		if(deepCopyThis!=null){
+			for(TagType type : deepCopyThis.getTags()){
+				addTag(type);
+			}
+			
 		}
 	}
 	
