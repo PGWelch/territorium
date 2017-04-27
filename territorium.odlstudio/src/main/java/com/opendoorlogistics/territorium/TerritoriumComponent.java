@@ -656,7 +656,7 @@ final public class TerritoriumComponent implements ODLComponent {
 
 				// Show all details if the outer steps are slow (i.e. for big problems).
 				// Assume we're running slow if we haven't had many outer steps yet.
-				boolean showStepDetails = state.getOuterStepTimingsInSeconds().getCount()<2 || state.getOuterStepTimingsInSeconds().getAverage()>2; 
+				boolean showStepDetails = state.getOuterStepTimingsInSeconds().getCount()<2 || state.getOuterStepTimingsInSeconds().getAverage()>1; 
 				
 				// Callbacks will happen often, so we need to filter them...
 				long millisSinceLastUpdate = currentMillis - lastUpdateTime;
@@ -670,7 +670,7 @@ final public class TerritoriumComponent implements ODLComponent {
 					if (state.getBestSolution() != null) {
 						Cost cost = state.getBestSolution().getCost();
 						builder.append("Current best has quantity violation=" + cost.getQuantityViolation()
-								+ ", travel=" + cost.getTravel());
+								+ ", cost=" + cost.getTravel());
 					}
 
 					builder.append(System.lineSeparator());

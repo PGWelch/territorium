@@ -235,7 +235,7 @@ public class LocalSearch {
 		
 		Cost newCost = new Cost();
 		
-		long lastCallbackTime=-1;
+		long lastCallbackTime=System.currentTimeMillis();
 		boolean [] clusterTried = new boolean[problem.getClusters().size()];
 		int nbDone=0;
 		for(int customerIndx: NumberUtils.getRandomOrder0ToNArray(random, problem.getCustomers().size()-1)){
@@ -374,7 +374,7 @@ public class LocalSearch {
 
 
 		// loop over each cluster taking first improving moves
-		long lastCallbackTime = -1;
+		long lastCallbackTime = System.currentTimeMillis();
 		for (int i = 0; i < p; i++) {
 			int cli = list.get(i);
 

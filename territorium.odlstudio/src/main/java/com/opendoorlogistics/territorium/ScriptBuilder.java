@@ -233,8 +233,8 @@ public class ScriptBuilder {
 		Maps mapComponent = bb.api.standardComponents().map();
 		Serializable config = null;
 		try{
-			config = mapComponent.getConfigClass().newInstance();	
-			mapComponent.setCustomTooltips(true, config);
+			config = mapComponent.getConfigClass().newInstance();
+			mapComponent.setCustomTooltips(false, config);
 		}catch(Exception e){
 			throw new RuntimeException(e);
 		}
