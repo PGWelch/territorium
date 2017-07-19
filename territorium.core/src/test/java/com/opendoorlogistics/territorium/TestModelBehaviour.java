@@ -15,14 +15,14 @@
  *******************************************************************************/
 package com.opendoorlogistics.territorium;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Random;
 
 import org.junit.Test;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
-import com.opendoorlogistics.territorium.examples.XYMinMaxQuantitiesHeterogeneousClusters;
 import com.opendoorlogistics.territorium.optimiser.data.Cost;
 import com.opendoorlogistics.territorium.optimiser.data.ImmutableSolution;
 import com.opendoorlogistics.territorium.optimiser.solver.Solver;
