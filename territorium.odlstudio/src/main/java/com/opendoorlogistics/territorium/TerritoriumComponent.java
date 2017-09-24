@@ -76,8 +76,8 @@ final public class TerritoriumComponent implements ODLComponent {
 	public static final String UNASSIGNED = "UNASSIGNED";
 	static final String COMPONENT_ID = "com.opendoorlogistics.components.territorium";
 	static final int CONTINUE_OPTIMISATION_MODE = ODLComponent.MODE_FIRST_USER_MODE;
-	static final int MODE_UPDATE_OUTPUT_TABLES_ONLY= CONTINUE_OPTIMISATION_MODE + 1;
-//	static final int MODE_UPDATE_TABLES= MODE_UPDATE_SOLUTION_FOR_DISPLAY + 1;
+	static final int MODE_UPDATE_OUTPUT_TABLES_ONLY = CONTINUE_OPTIMISATION_MODE + 1;
+	// static final int MODE_UPDATE_TABLES= MODE_UPDATE_SOLUTION_FOR_DISPLAY + 1;
 	static final int MODE_BUILD_DEMO = MODE_UPDATE_OUTPUT_TABLES_ONLY + 1;
 
 	@Override
@@ -91,33 +91,46 @@ final public class TerritoriumComponent implements ODLComponent {
 	}
 
 	@Override
-	public ODLDatastore<? extends ODLTableDefinition> getIODsDefinition(ODLApi api, Serializable configuration) {
+	public ODLDatastore<? extends ODLTableDefinition> getIODsDefinition(ODLApi api,
+			Serializable configuration) {
 		Tables tables = api.tables();
-		ODLDatastoreAlterable<? extends ODLTableDefinitionAlterable> ret = tables.createDefinitionDs();
-		api.tables().copyTableDefinition(tables.mapBeanToTable(ODLBeanCustomer.class).getTableDefinition(), ret);
-		ret.setTableName(0, "Customers");
-		if (((CapClusterConfig) configuration).isUseInputClusterTable()) {
-			api.tables().copyTableDefinition(tables.mapBeanToTable(ODLBeanCluster.class).getTableDefinition(), ret);
+		TerritoriumConfig tc = (TerritoriumConfig) configuration;
+		ODLDatastoreAlterable<? extends ODLTableDefinitionAlterable> ret = tables
+				.createDefinitionDs();
+		api.tables().copyTableDefinition(getCustomersTableDefinition(tables), ret);
+		ret.setTableName(0, ScriptBuilder.customersTableName(tc.isPolygons()));
+		if (tc.isUseInputClusterTable()) {
+			api.tables().copyTableDefinition(getClustersTableDefinition(tables), ret);
 			ret.setTableName(1, "Clusters");
 		}
 		return ret;
 	}
 
+	public static ODLTableDefinition getClustersTableDefinition(Tables tables) {
+		return tables.mapBeanToTable(ODLBeanCluster.class).getTableDefinition();
+	}
+
+	public static ODLTableDefinition getCustomersTableDefinition(Tables tables) {
+		return tables.mapBeanToTable(ODLBeanCustomer.class).getTableDefinition();
+	}
+
 	@Override
 	public ODLDatastore<? extends ODLTableDefinition> getOutputDsDefinition(ODLApi api, int mode,
 			Serializable configuration) {
-		ODLDatastoreAlterable<? extends ODLTableDefinitionAlterable> ret = api.tables().createDefinitionDs();
-		api.tables().copyTableDefinition(api.tables().mapBeanToTable(ODLBeanCustomerReport.class).getTableDefinition(), ret);
+		ODLDatastoreAlterable<? extends ODLTableDefinitionAlterable> ret = api.tables()
+				.createDefinitionDs();
+		api.tables().copyTableDefinition(
+				api.tables().mapBeanToTable(ODLBeanCustomerReport.class).getTableDefinition(), ret);
 		ret.setTableName(ret.getTableAt(0).getImmutableId(), "Customers_Report");
 
-		
-		api.tables().copyTableDefinition(api.tables().mapBeanToTable(ODLBeanClusterReport.class).getTableDefinition(), ret);
+		api.tables().copyTableDefinition(
+				api.tables().mapBeanToTable(ODLBeanClusterReport.class).getTableDefinition(), ret);
 		ret.setTableName(ret.getTableAt(1).getImmutableId(), "Clusters_Report");
-		
-		api.tables().copyTableDefinition(api.tables().mapBeanToTable(ODLBeanSolutionReport.class).getTableDefinition(), ret);
+
+		api.tables().copyTableDefinition(
+				api.tables().mapBeanToTable(ODLBeanSolutionReport.class).getTableDefinition(), ret);
 		ret.setTableName(ret.getTableAt(2).getImmutableId(), "Solution_Report");
-		
-		
+
 		return ret;
 	}
 
@@ -167,16 +180,17 @@ final public class TerritoriumComponent implements ODLComponent {
 
 	}
 
-	private List<ODLBeanCustomer> getInputCustomers(ODLApi api, ODLDatastore<? extends ODLTable> ioDb) {
-		return api.tables().mapBeanToTable(ODLBeanCustomer.class).readObjectsFromTable(ioDb.getTableAt(0)).stream()
-				.map(o -> {
+	private List<ODLBeanCustomer> getInputCustomers(ODLApi api,
+			ODLDatastore<? extends ODLTable> ioDb) {
+		return api.tables().mapBeanToTable(ODLBeanCustomer.class)
+				.readObjectsFromTable(ioDb.getTableAt(0)).stream().map(o -> {
 					return (ODLBeanCustomer) o;
 				}).collect(Collectors.toList());
 
 	}
 
-	private List<ODLBeanCluster> getInputClusters(ODLApi api, ODLDatastore<? extends ODLTable> ioDb, int mode,
-			List<ODLBeanCustomer> inputCustomers, CapClusterConfig config) {
+	private List<ODLBeanCluster> getInputClusters(ODLApi api, ODLDatastore<? extends ODLTable> ioDb,
+			int mode, List<ODLBeanCustomer> inputCustomers, TerritoriumConfig config) {
 		StringConventions conventions = api.stringConventions();
 
 		class Helper {
@@ -193,15 +207,15 @@ final public class TerritoriumComponent implements ODLComponent {
 
 		List<ODLBeanCluster> ret = null;
 		if (config.isUseInputClusterTable()) {
-			ret = api.tables().mapBeanToTable(ODLBeanCluster.class).readObjectsFromTable(ioDb.getTableAt(1)).stream()
-					.map(o -> {
+			ret = api.tables().mapBeanToTable(ODLBeanCluster.class)
+					.readObjectsFromTable(ioDb.getTableAt(1)).stream().map(o -> {
 						return (ODLBeanCluster) o;
 					}).collect(Collectors.toList());
 
 		} else {
 			ret = new ArrayList<>();
 
-			if (mode == TerritoriumComponent.MODE_UPDATE_OUTPUT_TABLES_ONLY ) {
+			if (mode == TerritoriumComponent.MODE_UPDATE_OUTPUT_TABLES_ONLY) {
 				// use ids for clusters already present but with default min / max quantities etc
 				Set<String> existingClusterIds = conventions.createStandardisedSet();
 				inputCustomers.forEach(c -> {
@@ -228,20 +242,22 @@ final public class TerritoriumComponent implements ODLComponent {
 			if (cluster.getDisplayColour() == null) {
 				if (!conventions.isEmptyStandardised(cluster.getId())) {
 					// see if we have one predefined for a number
-					cluster.setDisplayColour(Utils.PREDEFINED_COLOURS_BY_NUMBER_STRING.get(cluster.getId()));
-					
+					cluster.setDisplayColour(
+							Utils.PREDEFINED_COLOURS_BY_NUMBER_STRING.get(cluster.getId()));
+
 					// otherwise choose at random based on the cluster id string
-					if(cluster.getDisplayColour()==null){
+					if (cluster.getDisplayColour() == null) {
 						random.setSeed(conventions.standardise(cluster.getId()).hashCode());
-						cluster.setDisplayColour(Utils.randomColour(random));						
+						cluster.setDisplayColour(Utils.randomColour(random));
 					}
 				} else {
 					// choose at random based on the index
-					cluster.setDisplayColour(Utils.PREDEFINED_COLOURS_BY_NUMBER_STRING.get(Integer.toString(i)));
+					cluster.setDisplayColour(
+							Utils.PREDEFINED_COLOURS_BY_NUMBER_STRING.get(Integer.toString(i)));
 
-					if(cluster.getDisplayColour()==null){
+					if (cluster.getDisplayColour() == null) {
 						random.setSeed(i * 31 + 5);
-						cluster.setDisplayColour(Utils.randomColour(random));						
+						cluster.setDisplayColour(Utils.randomColour(random));
 					}
 				}
 			}
@@ -249,8 +265,9 @@ final public class TerritoriumComponent implements ODLComponent {
 		return ret;
 	}
 
-	private Problem createProblem(ComponentExecutionApi reporter, List<ODLBeanCustomer> inputCustomers,
-			List<ODLBeanCluster> inputClusters, CapClusterConfig config) {
+	private Problem createProblem(ComponentExecutionApi reporter,
+			List<ODLBeanCustomer> inputCustomers, List<ODLBeanCluster> inputClusters,
+			TerritoriumConfig config) {
 		LatLongLocationFactory llFactory = new LatLongLocationFactory();
 
 		// read objects from the tables using bean mapping
@@ -265,19 +282,20 @@ final public class TerritoriumComponent implements ODLComponent {
 			return customer;
 		}).collect(Collectors.toList()));
 
-		
 		// read clusters table
 		problem.setClusters(inputClusters.stream().map(bc -> {
 			Cluster cluster = new Cluster();
 			cluster.setUserIndex(bc.getGlobalRowId());
 
 			// target location
-			cluster.setFixCentreToTarget(reporter.getApi().values().isTrue(bc.getFixCentreToTarget()));
+			cluster.setFixCentreToTarget(
+					reporter.getApi().values().isTrue(bc.getFixCentreToTarget()));
 			cluster.setTargetCentreCostPerUnitDistance(bc.getTargetCentreCostPerUnitDistance());
 			cluster.setTargetCentreCostPerUnitTime(bc.getTargetCentreCostPerUnitTime());
 			if (cluster.isFixCentreToTarget() || cluster.getTargetCentreCostPerUnitDistance() != 0
 					|| cluster.getTargetCentreCostPerUnitTime() != 0) {
-				cluster.setTargetCentre(llFactory.create(bc.getTargetLatitude(), bc.getTargetLongitude()));
+				cluster.setTargetCentre(
+						llFactory.create(bc.getTargetLatitude(), bc.getTargetLongitude()));
 			}
 
 			// quantities
@@ -303,7 +321,8 @@ final public class TerritoriumComponent implements ODLComponent {
 		BeanTableMapping btm = tables.mapBeanToTable(LocationForDistancesCalculation.class);
 		ODLTable table = tables.createTable(btm.getTableDefinition());
 		btm.writeObjectsToTable(locationRecords, table);
-		ODLCostMatrix distancesTable = reporter.calculateDistances(config.getDistancesConfig(), table);
+		ODLCostMatrix distancesTable = reporter.calculateDistances(config.getDistancesConfig(),
+				table);
 		if (reporter.isCancelled()) {
 			return null;
 		}
@@ -314,7 +333,8 @@ final public class TerritoriumComponent implements ODLComponent {
 		Arrays.fill(territoriumToODLLocIndex, -1);
 		Problem.getAllLocations(problem).forEach(l -> {
 			LatLongLocation ll = (LatLongLocation) l;
-			territoriumToODLLocIndex[ll.getIndex()] = distancesTable.getIndex(Integer.toString(ll.getIndex()));
+			territoriumToODLLocIndex[ll.getIndex()] = distancesTable
+					.getIndex(Integer.toString(ll.getIndex()));
 		});
 
 		// create territorium matrix and get non infinite (i.e. connected) distance and time
@@ -325,8 +345,10 @@ final public class TerritoriumComponent implements ODLComponent {
 			int odlFrom = territoriumToODLLocIndex[from];
 			for (int to = 0; to < nLocs; to++) {
 				int odlTo = territoriumToODLLocIndex[to];
-				double dist = distancesTable.get(odlFrom, odlTo, ODLCostMatrix.COST_MATRIX_INDEX_DISTANCE);
-				double time = distancesTable.get(odlFrom, odlTo, ODLCostMatrix.COST_MATRIX_INDEX_TIME);
+				double dist = distancesTable.get(odlFrom, odlTo,
+						ODLCostMatrix.COST_MATRIX_INDEX_DISTANCE);
+				double time = distancesTable.get(odlFrom, odlTo,
+						ODLCostMatrix.COST_MATRIX_INDEX_TIME);
 				tMatrix[from][to] = new DistanceTime(dist, time);
 				if (!Double.isInfinite(dist)) {
 					maxDist.accept(dist);
@@ -386,9 +408,10 @@ final public class TerritoriumComponent implements ODLComponent {
 
 	@Override
 	public void execute(final ComponentExecutionApi reporter, int mode, Object configuration,
-			ODLDatastore<? extends ODLTable> ioDb, ODLDatastoreAlterable<? extends ODLTableAlterable> outputDb) {
+			ODLDatastore<? extends ODLTable> ioDb,
+			ODLDatastoreAlterable<? extends ODLTableAlterable> outputDb) {
 
-		CapClusterConfig config = (CapClusterConfig) configuration;
+		TerritoriumConfig config = (TerritoriumConfig) configuration;
 		if (mode == MODE_BUILD_DEMO) {
 			buildDemo(reporter, config, ioDb);
 			return;
@@ -397,7 +420,8 @@ final public class TerritoriumComponent implements ODLComponent {
 		reporter.postStatusMessage("Reading input information");
 		ODLApi api = reporter.getApi();
 		List<ODLBeanCustomer> inputCustomers = getInputCustomers(api, ioDb);
-		List<ODLBeanCluster> inputClusters = getInputClusters(api, ioDb, mode, inputCustomers, config);
+		List<ODLBeanCluster> inputClusters = getInputClusters(api, ioDb, mode, inputCustomers,
+				config);
 		Problem problem = createProblem(reporter, inputCustomers, inputClusters, config);
 		if (problem == null) {
 			// user cancelled
@@ -405,14 +429,16 @@ final public class TerritoriumComponent implements ODLComponent {
 		}
 
 		// read initial sol in case we use it
-		ImmutableSolution initialSol = getInitialSolution(api, inputCustomers, inputClusters, problem);
+		ImmutableSolution initialSol = getInitialSolution(api, inputCustomers, inputClusters,
+				problem);
 
 		// create and run solver
 		ImmutableSolution sol = null;
 		if (mode == MODE_DEFAULT || mode == CONTINUE_OPTIMISATION_MODE) {
 			reporter.postStatusMessage("Running solver");
 			Solver solver = createSolver(reporter, config, problem);
-			sol = solver.solve(mode == CONTINUE_OPTIMISATION_MODE ? initialSol.getCustomersToClusters() : null);
+			sol = solver.solve(mode == CONTINUE_OPTIMISATION_MODE
+					? initialSol.getCustomersToClusters() : null);
 		} else {
 			sol = initialSol;
 		}
@@ -422,9 +448,10 @@ final public class TerritoriumComponent implements ODLComponent {
 			reporter.postStatusMessage("Writing data out");
 
 			exportCustomerReport(reporter, inputCustomers, inputClusters, sol, outputDb);
-			List<ODLBeanClusterReport> exportedClusters = exportClusterReport(reporter, inputClusters, sol, outputDb);
+			List<ODLBeanClusterReport> exportedClusters = exportClusterReport(reporter,
+					inputClusters, sol, outputDb);
 			exportSolutionReport(reporter, inputClusters, sol, exportedClusters, outputDb);
-			
+
 			// update customers objects IF WE'RE NOT IN UPDATE MODE,
 			// AS THIS MESSES UP THE UNDO / REDO BUFFER
 			Tables tables = reporter.getApi().tables();
@@ -434,21 +461,22 @@ final public class TerritoriumComponent implements ODLComponent {
 					int clusterIndx = sol.getClusterIndex(i);
 					if (clusterIndx != -1) {
 						String newClusterId = inputClusters.get(clusterIndx).getId();
-//						boolean update = true;
-//						if(mode == TerritoriumComponent.MODE_UPDATE_TABLES && api.stringConventions().equalStandardised(newClusterId, customer.getClusterId())){
-//							// don't standardised in user tables provided by the user when we don't have to...
-//							update = false;
-//						}
-						
-					//	if(update){
-							customer.setClusterId(newClusterId);							
-					//	}
+						// boolean update = true;
+						// if(mode == TerritoriumComponent.MODE_UPDATE_TABLES &&
+						// api.stringConventions().equalStandardised(newClusterId, customer.getClusterId())){
+						// // don't standardised in user tables provided by the user when we don't have to...
+						// update = false;
+						// }
+
+						// if(update){
+						customer.setClusterId(newClusterId);
+						// }
 
 					} else {
 						customer.setClusterId(null);
 					}
 				}
-				
+
 				// update customer table
 				BeanTableMapping customerMapping = tables.mapBeanToTable(ODLBeanCustomer.class);
 				for (int i = 0; i < inputCustomers.size(); i++) {
@@ -458,113 +486,117 @@ final public class TerritoriumComponent implements ODLComponent {
 
 			}
 
-
-
-
 		}
 
 		reporter.postStatusMessage("Finished clustering");
 	}
 
-	private List<ODLBeanCustomerReport> exportCustomerReport(ComponentExecutionApi reporter, List<ODLBeanCustomer>inputCustomers,
-			List<ODLBeanCluster> inputClusters,
+	private List<ODLBeanCustomerReport> exportCustomerReport(ComponentExecutionApi reporter,
+			List<ODLBeanCustomer> inputCustomers, List<ODLBeanCluster> inputClusters,
 			ImmutableSolution sol, ODLDatastoreAlterable<? extends ODLTableAlterable> outputDb) {
 		List<ODLBeanCustomerReport> outputCustomers = new ArrayList<>(inputCustomers.size());
 		Problem problem = sol.getProblem();
 		for (int i = 0; i < inputCustomers.size(); i++) {
 			ODLBeanCustomerReport cr = new ODLBeanCustomerReport();
 			ODLBeanCustomer c = inputCustomers.get(i);
-			
+
 			int clusterIndx = sol.getClusterIndex(i);
 			if (clusterIndx != -1) {
 				String newClusterId = inputClusters.get(clusterIndx).getId();
 				cr.setClusterId(newClusterId);
-				
-			//	Cluster optCluster = problem.getClusters().get(clusterIndx);
+
+				// Cluster optCluster = problem.getClusters().get(clusterIndx);
 				Location clusterLocation = sol.getClusterCentre(clusterIndx);
 				Customer optCustomer = problem.getCustomers().get(i);
 				cr.setTravelCost(problem.getTravelCost(clusterLocation, optCustomer));
-				DistanceTime dt = problem.getTravel(clusterLocation,optCustomer);
+				DistanceTime dt = problem.getTravel(clusterLocation, optCustomer);
 				cr.setTravelDistance(dt.getDistance());
 				cr.setTravelTime(dt.getTime());
-				cr.setPCOfClusterQuantity(100 * optCustomer.getQuantity() / sol.getClusterQuantity(clusterIndx));
+				cr.setPCOfClusterQuantity(
+						100 * optCustomer.getQuantity() / sol.getClusterQuantity(clusterIndx));
 			} else {
 				cr.setClusterId(UNASSIGNED);
 			}
-			
+
 			cr.setCostPerUnitTravelDistance(c.getCostPerUnitTravelDistance());
 			cr.setCostPerUnitTravelTime(c.getCostPerUnitTravelTime());
 			cr.setId(c.getId());
 			cr.setLatitude(c.getLatitude());
 			cr.setLongitude(c.getLongitude());
 			cr.setQuantity(c.getQuantity());
-			
 
 			outputCustomers.add(cr);
 		}
-		
-		BeanTableMapping mapping = reporter.getApi().tables().mapBeanToTable(ODLBeanCustomerReport.class);			
+
+		BeanTableMapping mapping = reporter.getApi().tables()
+				.mapBeanToTable(ODLBeanCustomerReport.class);
 		mapping.writeObjectsToTable(outputCustomers, outputDb.getTableAt(0));
 
 		return outputCustomers;
 	}
-	
-	private void exportSolutionReport(final ComponentExecutionApi reporter, List<ODLBeanCluster> inputClusters,
-			ImmutableSolution sol,List<ODLBeanClusterReport> exportedClusters,
-			ODLDatastoreAlterable<? extends ODLTableAlterable> outputDb){
-		//List<ODLBeanClusterReport> exportedClusters 
-		
+
+	private void exportSolutionReport(final ComponentExecutionApi reporter,
+			List<ODLBeanCluster> inputClusters, ImmutableSolution sol,
+			List<ODLBeanClusterReport> exportedClusters,
+			ODLDatastoreAlterable<? extends ODLTableAlterable> outputDb) {
+		// List<ODLBeanClusterReport> exportedClusters
+
 		Problem problem = sol.getProblem();
 		ODLBeanSolutionReport report = new ODLBeanSolutionReport();
-		report.setNbAssignedCustomers(problem.getCustomers().size() - sol.getNbUnassignedCustomers());
+		report.setNbAssignedCustomers(
+				problem.getCustomers().size() - sol.getNbUnassignedCustomers());
 		report.setNbUnassignedCustomers(sol.getNbUnassignedCustomers());
 		report.setCost(sol.getCost().getTravel());
 		report.setQuantityViolation(sol.getCost().getQuantityViolation());
-		
-		for(ODLBeanClusterReport cluster: exportedClusters){
-			if(cluster.getId().equals(UNASSIGNED)){
+
+		for (ODLBeanClusterReport cluster : exportedClusters) {
+			if (cluster.getId().equals(UNASSIGNED)) {
 				continue;
 			}
-			
-			report.setNbNonEmptyClusters(report.getNbNonEmptyClusters()+1);
+
+			report.setNbNonEmptyClusters(report.getNbNonEmptyClusters() + 1);
 			report.setCustomerCost(report.getCustomerCost() + cluster.getSelCustomerCost());
-			report.setCustomerDistance(report.getCustomerDistance() + cluster.getSelCustomerDistance());
+			report.setCustomerDistance(
+					report.getCustomerDistance() + cluster.getSelCustomerDistance());
 			report.setCustomerTime(report.getCustomerTime() + cluster.getSelCustomerTime());
-			report.setAssignedQuantity(report.getAssignedQuantity() + cluster.getAssignedQuantity());
+			report.setAssignedQuantity(
+					report.getAssignedQuantity() + cluster.getAssignedQuantity());
 			report.setTargetCost(report.getTargetCost() + cluster.getSelTargetCost());
 			report.setTargetDistance(report.getTargetDistance() + cluster.getSelTargetDistance());
 			report.setTargetTime(report.getTargetTime() + cluster.getSelTargetTime());
 		}
-				
+
 		// We cannot set the nb of empty clusters as this is undefined if we're not using an input cluster table
-		//report.setNbEmptyClusters(problem.getClusters().size() - report.getNbNonEmptyClusters());
-		
-		BeanTableMapping clusterMapping = reporter.getApi().tables().mapBeanToTable(ODLBeanSolutionReport.class);			
+		// report.setNbEmptyClusters(problem.getClusters().size() - report.getNbNonEmptyClusters());
+
+		BeanTableMapping clusterMapping = reporter.getApi().tables()
+				.mapBeanToTable(ODLBeanSolutionReport.class);
 		clusterMapping.writeObjectToTable(report, outputDb.getTableAt(2));
-		
+
 	}
-	
-	private List<ODLBeanClusterReport> exportClusterReport(final ComponentExecutionApi reporter, List<ODLBeanCluster> inputClusters,
-			ImmutableSolution sol, ODLDatastoreAlterable<? extends ODLTableAlterable> outputDb) {
+
+	private List<ODLBeanClusterReport> exportClusterReport(final ComponentExecutionApi reporter,
+			List<ODLBeanCluster> inputClusters, ImmutableSolution sol,
+			ODLDatastoreAlterable<? extends ODLTableAlterable> outputDb) {
 		// create cluster reports objects
 		Problem problem = sol.getProblem();
-		List<ODLBeanClusterReport> outputClusters = new ArrayList<>(inputClusters.size()+1);
+		List<ODLBeanClusterReport> outputClusters = new ArrayList<>(inputClusters.size() + 1);
 		for (int i = 0; i < inputClusters.size(); i++) {
 			ODLBeanClusterReport cr = new ODLBeanClusterReport();
-			
+
 			// copy input properties
 			ODLBeanCluster bc = inputClusters.get(i);
 			cr.setDisplayColour(bc.getDisplayColour());
-			//cr.setFixCentreToTarget(bc.getFixCentreToTarget());
+			// cr.setFixCentreToTarget(bc.getFixCentreToTarget());
 			cr.setGlobalRowId(-1);
 			cr.setId(bc.getId());
 			cr.setMaxQuantity(bc.getMaxQuantity());
 			cr.setMinQuantity(bc.getMinQuantity());
-			//cr.setTargetCentreCostPerUnitDistance(bc.getTargetCentreCostPerUnitDistance());
-			//cr.setTargetCentreCostPerUnitTime(bc.getTargetCentreCostPerUnitTime());
-			//cr.setTargetLatitude(bc.getTargetLatitude());
-			//cr.setTargetLongitude(bc.getTargetLongitude());
-			
+			// cr.setTargetCentreCostPerUnitDistance(bc.getTargetCentreCostPerUnitDistance());
+			// cr.setTargetCentreCostPerUnitTime(bc.getTargetCentreCostPerUnitTime());
+			// cr.setTargetLatitude(bc.getTargetLatitude());
+			// cr.setTargetLongitude(bc.getTargetLongitude());
+
 			// and output ones
 			LatLongLocation centre = (LatLongLocation) sol.getClusterCentre(i);
 			if (centre != null) {
@@ -572,20 +604,20 @@ final public class TerritoriumComponent implements ODLComponent {
 				cr.setAssignedLongitude(centre.getLongitude());
 			}
 			cr.setAssignedQuantityViolation(sol.getClusterCost(i).getQuantityViolation());
-			
+
 			int nc = sol.getNbCustomers(i);
 			cr.setAssignedCustomersCount(nc);
 			cr.setAssignedQuantity(sol.getClusterQuantity(i));
 			cr.setAssignedTotalCost(sol.getClusterCost(i).getTravel());
-			
+
 			// get breakdown of costs
 			// cluster total customer time, distance, target time, distance, cost. Total cost.
-			if(nc>0){
+			if (nc > 0) {
 				Location clusterLocation = sol.getClusterCentre(i);
-				double sumCustomerTime=0;
-				double sumCustomerDistance=0;
-				double sumCustomerCost=0;
-				for(int j =0 ; j<nc ; j++){
+				double sumCustomerTime = 0;
+				double sumCustomerDistance = 0;
+				double sumCustomerCost = 0;
+				for (int j = 0; j < nc; j++) {
 					int customerIndx = sol.getCustomer(i, j);
 					Customer optCustomer = problem.getCustomers().get(customerIndx);
 					DistanceTime dt = problem.getTravel(clusterLocation, optCustomer);
@@ -598,17 +630,19 @@ final public class TerritoriumComponent implements ODLComponent {
 				cr.setSelCustomerCost(sumCustomerCost);
 
 				Cluster optCluster = problem.getClusters().get(i);
-				DistanceTime targetDistTime = problem.getTargetToCentreTravel(clusterLocation, optCluster);
-				if(targetDistTime!=null){
+				DistanceTime targetDistTime = problem.getTargetToCentreTravel(clusterLocation,
+						optCluster);
+				if (targetDistTime != null) {
 					cr.setSelTargetTime(targetDistTime.getTime());
-					cr.setSelTargetDistance(targetDistTime.getDistance());					
+					cr.setSelTargetDistance(targetDistTime.getDistance());
 				}
-				cr.setSelTargetCost(problem.getTargetToCentreTravelCost(clusterLocation, optCluster));
+				cr.setSelTargetCost(
+						problem.getTargetToCentreTravelCost(clusterLocation, optCluster));
 			}
-			
+
 			outputClusters.add(cr);
 		}
-		
+
 		// include an 'unassigned' row...
 		if (sol.getNbUnassignedCustomers() > 0) {
 			ODLBeanClusterReport unassigned = new ODLBeanClusterReport();
@@ -619,18 +653,20 @@ final public class TerritoriumComponent implements ODLComponent {
 			unassigned.setGlobalRowId(-1);
 			outputClusters.add(0, unassigned);
 		}
-		BeanTableMapping clusterMapping = reporter.getApi().tables().mapBeanToTable(ODLBeanClusterReport.class);			
+		BeanTableMapping clusterMapping = reporter.getApi().tables()
+				.mapBeanToTable(ODLBeanClusterReport.class);
 		clusterMapping.writeObjectsToTable(outputClusters, outputDb.getTableAt(1));
-		
+
 		return outputClusters;
 	}
 
-	private Solver createSolver(final ComponentExecutionApi reporter, final CapClusterConfig config, Problem problem) {
+	private Solver createSolver(final ComponentExecutionApi reporter,
+			final TerritoriumConfig config, Problem problem) {
 		SolverConfig solverConfig = new SolverConfig();
 		solverConfig.getLocalSearchConfig().setInterclusterSwaps(config.isUseSwapMoves());
 		solverConfig.setNbOuterSteps(config.getMaxStepsOptimization());
 		long start = System.currentTimeMillis();
-		
+
 		Solver solver = new Solver(problem, solverConfig, new ContinueCallback() {
 			long lastUpdateTime = -1;
 			long lastBestSolutionNb = -1;
@@ -641,12 +677,12 @@ final public class TerritoriumComponent implements ODLComponent {
 					return ContinueOption.USER_CANCELLED;
 				}
 
-
 				long currentMillis = System.currentTimeMillis();
 				long ms = currentMillis - start;
 				double secs = ms / 1000.0;
 
-				if (config.getMaxSecondsOptimization() != -1 && secs > config.getMaxSecondsOptimization()) {
+				if (config.getMaxSecondsOptimization() != -1
+						&& secs > config.getMaxSecondsOptimization()) {
 					return ContinueOption.FINISH_NOW;
 				}
 
@@ -656,27 +692,29 @@ final public class TerritoriumComponent implements ODLComponent {
 
 				// Show all details if the outer steps are slow (i.e. for big problems).
 				// Assume we're running slow if we haven't had many outer steps yet.
-				boolean showStepDetails = state.getOuterStepTimingsInSeconds().getCount()<2 || state.getOuterStepTimingsInSeconds().getAverage()>1; 
-				
+				boolean showStepDetails = state.getOuterStepTimingsInSeconds().getCount() < 2
+						|| state.getOuterStepTimingsInSeconds().getAverage() > 1;
+
 				// Callbacks will happen often, so we need to filter them...
 				long millisSinceLastUpdate = currentMillis - lastUpdateTime;
-				if (millisSinceLastUpdate > 200 || state.getBestSolutionNb() != lastBestSolutionNb || showStepDetails) {
+				if (millisSinceLastUpdate > 200 || state.getBestSolutionNb() != lastBestSolutionNb
+						|| showStepDetails) {
 					lastUpdateTime = currentMillis;
 					lastBestSolutionNb = state.getBestSolutionNb();
 					StringBuilder builder = new StringBuilder();
-					builder.append("Running for " + (int) (ms * 0.001) + " seconds and " + state.getNbOuterSteps()
-							+ " outer step(s)." + System.lineSeparator());
+					builder.append("Running for " + (int) (ms * 0.001) + " seconds and "
+							+ state.getNbOuterSteps() + " outer step(s)." + System.lineSeparator());
 
 					if (state.getBestSolution() != null) {
 						Cost cost = state.getBestSolution().getCost();
-						builder.append("Current best has quantity violation=" + cost.getQuantityViolation()
-								+ ", cost=" + cost.getTravel());
+						builder.append("Current best has quantity violation="
+								+ cost.getQuantityViolation() + ", cost=" + cost.getTravel());
 					}
 
 					builder.append(System.lineSeparator());
 					builder.append(System.lineSeparator());
 
-					if(showStepDetails){
+					if (showStepDetails) {
 						builder.append("Operation:");
 						builder.append(System.lineSeparator());
 						int opNb = 0;
@@ -687,9 +725,9 @@ final public class TerritoriumComponent implements ODLComponent {
 							builder.append(op);
 							opNb++;
 						}
-						builder.append(System.lineSeparator());						
+						builder.append(System.lineSeparator());
 					}
-					
+
 					reporter.postStatusMessage(builder.toString());
 				}
 
@@ -701,13 +739,13 @@ final public class TerritoriumComponent implements ODLComponent {
 
 	@Override
 	public Class<? extends Serializable> getConfigClass() {
-		return CapClusterConfig.class;
+		return TerritoriumConfig.class;
 	}
 
 	@Override
-	public JPanel createConfigEditorPanel(ComponentConfigurationEditorAPI factory, int mode, Serializable config,
-			boolean isFixedIO) {
-		return ConfigPanelFactory.create((CapClusterConfig) config, factory, isFixedIO);
+	public JPanel createConfigEditorPanel(ComponentConfigurationEditorAPI factory, int mode,
+			Serializable config, boolean isFixedIO) {
+		return ConfigPanelFactory.create((TerritoriumConfig) config, factory, isFixedIO);
 		// return new ConfigPanelFactory((CapClusterConfig)config,factory,isFixedIO);
 	}
 
@@ -724,12 +762,22 @@ final public class TerritoriumComponent implements ODLComponent {
 	public void registerScriptTemplates(ScriptTemplatesBuilder templatesApi) {
 
 		for (ClustererScriptType type : ClustererScriptType.values()) {
-			CapClusterConfig config = new CapClusterConfig();
-			config.setUseInputClusterTable(type.inputClusters);
+			if (!ScriptBuilder.ENABLE_POLYS) {
+				if (type == ClustererScriptType.POLYS_SETUP_INPUT_CLUSTERS
+						|| type == ClustererScriptType.POINTS_SETUP_NO_INPUT_CLUSTERS) {
+					continue;
+				}
+			}
 
+			// create the external input ds (may omit the internal lat long fields)
+			Tables tables = templatesApi.getApi().tables();
+			ODLDatastoreAlterable<? extends ODLTableDefinitionAlterable> tmpDs = tables.createAlterableDs();
+			for(ODLTableDefinition table: ScriptBuilder.createExternalTableDefinitions(templatesApi.getApi(), type.createConfig())){
+				tables.addTableDefinition(table, tmpDs, false);
+			}
+			
 			templatesApi.registerTemplate(type.description, type.description, type.description,
-					new TerritoriumComponent().getIODsDefinition(templatesApi.getApi(), config),
-					new BuildScriptCallback() {
+					tmpDs, new BuildScriptCallback() {
 
 						@Override
 						public void buildScript(ScriptOption builder) {
@@ -740,18 +788,37 @@ final public class TerritoriumComponent implements ODLComponent {
 		}
 	}
 
+//	public static ODLDatastore<? extends ODLTableDefinition> getExternalIODS(Tables tables, TerritoriumConfig tc){
+//		ODLDatastoreAlterable<? extends ODLTableDefinitionAlterable> externalIODS = tables
+//				.createDefinitionDs();
+//		if (tc.isPolygons()) {
+//			tables.copyTableDefinition(getCustomersTableDefinition(tables), externalIODS);
+//			externalIODS.setTableName(0, ScriptBuilder.customersTableName(true));
+//		} else {
+//			tables.copyTableDefinition(getCustomersTableDefinition(tables), externalIODS);
+//			externalIODS.setTableName(0, ScriptBuilder.customersTableName(false));
+//		}
+//		if (tc.isUseInputClusterTable()) {
+//			tables.copyTableDefinition(getClustersTableDefinition(tables), externalIODS);
+//			externalIODS.setTableName(1, "Clusters");
+//		}
+//		return externalIODS;
+//	}
+
 	@Override
 	public Icon getIcon(ODLApi api, int mode) {
 		// Use own class loader to prevent problems if jar loaded by reflection
-		return new ImageIcon(TerritoriumComponent.class.getResource("/resources/icons/capacitated-clusterer.png"));
+		return new ImageIcon(TerritoriumComponent.class
+				.getResource("/resources/icons/capacitated-clusterer.png"));
 	}
 
 	@Override
 	public boolean isModeSupported(ODLApi api, int mode) {
-		return mode == ODLComponent.MODE_DEFAULT || mode == MODE_UPDATE_OUTPUT_TABLES_ONLY || mode==MODE_BUILD_DEMO;
+		return mode == ODLComponent.MODE_DEFAULT || mode == MODE_UPDATE_OUTPUT_TABLES_ONLY
+				|| mode == MODE_BUILD_DEMO;
 	}
 
-	private void buildDemo(final ComponentExecutionApi api, final CapClusterConfig conf,
+	private void buildDemo(final ComponentExecutionApi api, final TerritoriumConfig conf,
 			ODLDatastore<? extends ODLTable> ioDb) {
 		class DemoConfigExt extends DemoConfig {
 			ModalDialogResult result = null;
@@ -773,8 +840,8 @@ final public class TerritoriumComponent implements ODLComponent {
 				demoConfig.country = "United Kingdom";
 				countryPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 				countryPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-				for (JComponent comp : api.getApi().uiFactory().createComboComponents("Country ", values,
-						demoConfig.country, new ItemChangedListener<String>() {
+				for (JComponent comp : api.getApi().uiFactory().createComboComponents("Country ",
+						values, demoConfig.country, new ItemChangedListener<String>() {
 
 							@Override
 							public void itemChanged(String item) {
@@ -787,8 +854,9 @@ final public class TerritoriumComponent implements ODLComponent {
 				panel.add(countryPanel);
 
 				// add number of stops
-				panel.add(api.getApi().uiFactory().createIntegerEntryPane("Number of customer points  ",
-						demoConfig.nbCustomers, "", new IntChangedListener() {
+				panel.add(api.getApi().uiFactory().createIntegerEntryPane(
+						"Number of customer points  ", demoConfig.nbCustomers, "",
+						new IntChangedListener() {
 
 							@Override
 							public void intChange(int newInt) {
@@ -798,8 +866,9 @@ final public class TerritoriumComponent implements ODLComponent {
 
 				// add number of clusters
 				if (conf.isUseInputClusterTable()) {
-					panel.add(api.getApi().uiFactory().createIntegerEntryPane("Number of input clusters  ",
-							demoConfig.nbClusters, "", new IntChangedListener() {
+					panel.add(api.getApi().uiFactory().createIntegerEntryPane(
+							"Number of input clusters  ", demoConfig.nbClusters, "",
+							new IntChangedListener() {
 
 								@Override
 								public void intChange(int newInt) {
@@ -810,8 +879,8 @@ final public class TerritoriumComponent implements ODLComponent {
 				}
 
 				// call modal
-				demoConfig.result = api.showModalPanel(panel, "Select demo configuration", ModalDialogResult.OK,
-						ModalDialogResult.CANCEL);
+				demoConfig.result = api.showModalPanel(panel, "Select demo configuration",
+						ModalDialogResult.OK, ModalDialogResult.CANCEL);
 			}
 
 			// private JCheckBox createCheck(String name, boolean selected, ActionListener listenr) {

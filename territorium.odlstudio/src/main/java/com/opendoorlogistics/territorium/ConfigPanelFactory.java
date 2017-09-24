@@ -23,7 +23,7 @@ import com.opendoorlogistics.api.ui.UIFactory.IntChangedListener;
 
 public class ConfigPanelFactory {
 
-	static JPanel create(final CapClusterConfig conf, ComponentConfigurationEditorAPI factory,
+	static JPanel create(final TerritoriumConfig conf, ComponentConfigurationEditorAPI factory,
 			boolean isFixedIO) {
 		UIFactory uiFactory = factory.getApi().uiFactory();
 		JPanel panel = uiFactory.createVerticalLayoutPanel();

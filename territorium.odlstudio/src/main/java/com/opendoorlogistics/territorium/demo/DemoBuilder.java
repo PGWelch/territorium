@@ -17,7 +17,7 @@ import com.opendoorlogistics.api.Tables;
 import com.opendoorlogistics.api.tables.ODLDatastore;
 import com.opendoorlogistics.api.tables.ODLTable;
 import com.opendoorlogistics.api.tables.beans.BeanTableMapping;
-import com.opendoorlogistics.territorium.CapClusterConfig;
+import com.opendoorlogistics.territorium.TerritoriumConfig;
 import com.opendoorlogistics.territorium.ODLBeanCluster;
 import com.opendoorlogistics.territorium.ODLBeanCustomer;
 import com.opendoorlogistics.territorium.Utils;
@@ -26,11 +26,11 @@ import com.opendoorlogistics.territorium.demo.DemoAddresses.DemoLatLong;
 public class DemoBuilder {
 	private final ODLApi api;
 	private final DemoConfig demoConfig;
-	private final CapClusterConfig config;
+	private final TerritoriumConfig config;
 	private final ODLDatastore<? extends ODLTable> ioDb;
 	private final DemoAddresses addresses;
 	
-	public DemoBuilder(ODLApi api,DemoConfig demoConfig, CapClusterConfig capClusterConfig, ODLDatastore<? extends ODLTable> ioDb) {
+	public DemoBuilder(ODLApi api,DemoConfig demoConfig, TerritoriumConfig capClusterConfig, ODLDatastore<? extends ODLTable> ioDb) {
 		this.api = api;
 		this.demoConfig = demoConfig;
 		this.config = capClusterConfig;

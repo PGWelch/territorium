@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import com.opendoorlogistics.api.distances.DistancesConfiguration;
 
 @XmlRootElement(name = "CapacitatedClustererConfig")
-final public class CapClusterConfig implements Serializable {
+final public class TerritoriumConfig implements Serializable {
 	private int maxSecondsOptimization = 120;
 	private int maxStepsOptimization = 250;
 	private boolean useInputClusterTable; 
@@ -23,6 +23,8 @@ final public class CapClusterConfig implements Serializable {
 	private double minClusterQuantity=0;
 	private double maxClusterQuantity=100;
 	private boolean useSwapMoves=true;
+	private boolean polygons = false;
+	
 	private DistancesConfiguration distancesConfig = new DistancesConfiguration(); 
 	
 	public int getMaxSecondsOptimization() {
@@ -95,6 +97,15 @@ final public class CapClusterConfig implements Serializable {
 
 	public void setMaxClusterQuantity(double maxClusterQuantity) {
 		this.maxClusterQuantity = maxClusterQuantity;
+	}
+
+	@XmlAttribute
+	public boolean isPolygons() {
+		return polygons;
+	}
+
+	public void setPolygons(boolean polygons) {
+		this.polygons = polygons;
 	}
 
 	
