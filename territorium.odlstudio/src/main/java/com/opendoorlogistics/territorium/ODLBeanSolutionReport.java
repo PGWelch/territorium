@@ -51,7 +51,7 @@ public class ODLBeanSolutionReport implements BeanMappedRow{
 	private double targetCost;
 	
 	@ODLColumnOrder(COL_NB_NON_EMPTY_CLUSTERS)
-	@ODLColumnName("#used-clusters")		
+	@ODLColumnName("#used-territories")		
 	public int getNbNonEmptyClusters() {
 		return nbNonEmptyClusters;
 	}

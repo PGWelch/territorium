@@ -37,7 +37,7 @@ public class ODLBeanCustomer implements BeanMappedRow{
 	
 	@ODLNullAllowed
 	@ODLColumnOrder(COL_CLUSTER)	
-	@ODLColumnName("cluster-id")
+	@ODLColumnName(ScriptBuilder.TERRITORY_ID_FIELD)
 	public String getClusterId() {
 		return clusterId;
 	}

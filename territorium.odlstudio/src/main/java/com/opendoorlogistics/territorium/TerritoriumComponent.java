@@ -87,7 +87,7 @@ final public class TerritoriumComponent implements ODLComponent {
 
 	@Override
 	public String getName() {
-		return "Capacitated clusterer (territorium)";
+		return "Territorium";
 	}
 
 	@Override
@@ -101,7 +101,7 @@ final public class TerritoriumComponent implements ODLComponent {
 		ret.setTableName(0, ScriptBuilder.customersTableName(tc.isPolygons()));
 		if (tc.isUseInputClusterTable()) {
 			api.tables().copyTableDefinition(getClustersTableDefinition(tables), ret);
-			ret.setTableName(1, "Clusters");
+			ret.setTableName(1, "Territories");
 		}
 		return ret;
 	}
@@ -110,7 +110,7 @@ final public class TerritoriumComponent implements ODLComponent {
 		return tables.mapBeanToTable(ODLBeanCluster.class).getTableDefinition();
 	}
 
-	public static ODLTableDefinition getCustomersTableDefinition(Tables tables) {
+	private static ODLTableDefinition getCustomersTableDefinition(Tables tables) {
 		return tables.mapBeanToTable(ODLBeanCustomer.class).getTableDefinition();
 	}
 
@@ -125,7 +125,7 @@ final public class TerritoriumComponent implements ODLComponent {
 
 		api.tables().copyTableDefinition(
 				api.tables().mapBeanToTable(ODLBeanClusterReport.class).getTableDefinition(), ret);
-		ret.setTableName(ret.getTableAt(1).getImmutableId(), "Clusters_Report");
+		ret.setTableName(ret.getTableAt(1).getImmutableId(), "Territories_Report");
 
 		api.tables().copyTableDefinition(
 				api.tables().mapBeanToTable(ODLBeanSolutionReport.class).getTableDefinition(), ret);
@@ -762,12 +762,6 @@ final public class TerritoriumComponent implements ODLComponent {
 	public void registerScriptTemplates(ScriptTemplatesBuilder templatesApi) {
 
 		for (ClustererScriptType type : ClustererScriptType.values()) {
-			if (!ScriptBuilder.ENABLE_POLYS) {
-				if (type == ClustererScriptType.POLYS_SETUP_INPUT_CLUSTERS
-						|| type == ClustererScriptType.POINTS_SETUP_NO_INPUT_CLUSTERS) {
-					continue;
-				}
-			}
 
 			// create the external input ds (may omit the internal lat long fields)
 			Tables tables = templatesApi.getApi().tables();
