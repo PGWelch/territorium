@@ -48,12 +48,12 @@ import com.opendoorlogistics.territorium.utils.Pair;
 public class ScriptBuilder {
 	public static final String TERRITORY_ID_FIELD = "territory-id";
 
-//	public static final String NO_CONTROLS = "No controls setup";
-//	public static final String SAME_QUANTS = "same params for each cluster";
-//	public static final String DIFF_QUANTS = "separate params for each cluster";
-//	public static final String POINTS_OR_POLYS = "Setup for points or polygons";
-//	public static final String POINTS = "Setup for points";
-//	public static final String POLYS = "Setup for polygons";
+	// public static final String NO_CONTROLS = "No controls setup";
+	// public static final String SAME_QUANTS = "same params for each cluster";
+	// public static final String DIFF_QUANTS = "separate params for each cluster";
+	// public static final String POINTS_OR_POLYS = "Setup for points or polygons";
+	// public static final String POINTS = "Setup for points";
+	// public static final String POLYS = "Setup for polygons";
 
 	public static String customersTableName(boolean usingPolygons) {
 		if (usingPolygons) {
@@ -69,21 +69,27 @@ public class ScriptBuilder {
 
 		// BASIC_OPTIONS_SETUP_INPUT_CLUSTERS(POINTS_OR_POLYS + ", " + DIFF_QUANTS, true, true, false),
 
-		POINTS_SETUP_NO_INPUT_CLUSTERS("Create territories for customer points", false, true, true, false),
-
-		POLYS_SETUP_NO_INPUT_CLUSTERS("Create territories for polygons in a shapefile", false, true, false, true),
-
-		POINTS_SETUP_INPUT_CLUSTERS("Create territories for customer points, with territory parameters in their own table", true, true, true, false),
-		POLYS_SETUP_INPUT_CLUSTERS("Create territories for polygons in a shapefile, with territory parameters in their own table", true, true, false, true),
-	
-
-		COMPONENT_ONLY_NO_INPUT_CLUSTERS("(Advanced) Add component without controls", false, false, false,
+		POINTS_SETUP_NO_INPUT_CLUSTERS("Create territories for customer points", false, true, true,
 				false),
 
-		COMPONENT_ONLY_INPUT_CLUSTERS("(Advanced) Add component without controls, with territory parameters in their own table", true, false, false, false);
+		POLYS_SETUP_NO_INPUT_CLUSTERS("Create territories for polygons in a shapefile", false, true,
+				false, true),
 
-		// 
-		
+		POINTS_SETUP_INPUT_CLUSTERS(
+				"Create territories for customer points, with territory parameters in their own table",
+				true, true, true, false), POLYS_SETUP_INPUT_CLUSTERS(
+						"Create territories for polygons in a shapefile, with territory parameters in their own table",
+						true, true, false, true),
+
+		COMPONENT_ONLY_NO_INPUT_CLUSTERS("(Advanced) Add component without controls", false, false,
+				false, false),
+
+		COMPONENT_ONLY_INPUT_CLUSTERS(
+				"(Advanced) Add component without controls, with territory parameters in their own table",
+				true, false, false, false);
+
+		//
+
 		private ClustererScriptType(String description, boolean inputClusters, boolean coreControls,
 				boolean points, boolean polygons) {
 			this.inputClusters = inputClusters;
@@ -117,6 +123,7 @@ public class ScriptBuilder {
 		ODLDatastore<? extends ODLTableDefinition> outputDfn;
 		ScriptAdapter inputData;
 		ScriptAdapter shapefileLoader;
+		ScriptAdapter quantityStats;
 		// ScriptAdapter internalView;
 		ScriptComponentConfig settings;
 		String selectedClustersTableName;
@@ -145,33 +152,48 @@ public class ScriptBuilder {
 
 		addInputData(builder, bb);
 
-		// create shared stand-alone config
-		addOptimiserSettings(bb, builder);
-	
 		if (!type.coreControls) {
-			
-			// just add optimiser with empty output tables
-			ScriptInstruction instrBuilder = addRunComponent(bb, bb.builder,
-					ODLComponent.MODE_DEFAULT);
+
+			ScriptInstruction instrBuilder = bb.builder.addInstruction(bb.inputData.getAdapterId(),
+					TerritoriumComponent.COMPONENT_ID, ODLComponent.MODE_DEFAULT);
+
 			instrBuilder.setName("Optimise clusters");
 			addCopyOutput(bb, new Pair<ScriptOption, ScriptInstruction>(bb.builder, instrBuilder));
 			return;
 		}
 
-		addPrepareData(bb);
+		// create shared stand-alone config
+		addOptimiserSettings(bb, builder);
 
+		addPrepareData(bb);
 		addMapWithoutCentres(bb, bb.builder);
 
+		if(type.polygons){
+			addPolygonQuantitiesHeatMap(bb, bb.builder);
+		}
+
 		addQuantitiesReport(bb, bb.builder);
+
+		addQuantityStats(bb);
 		
-		ScriptOption optimiser=addOptimiser(bb);
+		ScriptOption optimiser = addOptimiser(bb);
 
 		addAnalyseOptimiserResults(bb, optimiser);
 
 	}
 
+	private void addQuantityStats(ScriptBuilderBB bb) {
+		String name = "Show quantity statistics";
+		ScriptOption option = bb.builder.addOption(name, name);
+		option.setSynced(true);
+		option.setEditorLabel("View statistics on quantities");
+		option.addInstruction(bb.quantityStats.getAdapterId(),
+				bb.api.standardComponents().tableViewer().getId(), ODLComponent.MODE_DEFAULT);
+	}
+
 	private void addOptimiserSettings(ScriptBuilderBB bb, ScriptOption option) {
-		bb.settings = option.addComponentConfig("Optimiser settings", bb.component.getId(), bb.config);
+		bb.settings = option.addComponentConfig("Optimiser settings", bb.component.getId(),
+				bb.config);
 	}
 
 	private void addAnalyseOptimiserResults(ScriptBuilderBB bb, ScriptOption optimiser) {
@@ -214,6 +236,19 @@ public class ScriptBuilder {
 				sat.setFormula(PredefinedTags.LONGITUDE, "longitude(" + lookup + ")");
 			}
 		}
+		
+		// add quantity stats adapter. does a group-by which caches results for a quick lookup
+		bb.quantityStats = builder.addDataAdapter("QuantityStats");
+		ScriptAdapterTable statsTable=bb.quantityStats.addEmptyTable("QuantityStats");
+		statsTable.setSourceTable(bb.inputData.getAdapterId(), getTableName(bb.inputData, 0));
+		statsTable.addColumn("GroupBy", ODLColumnType.STRING, true, "\"All records\"");
+		statsTable.setColumnFlags("GroupBy", TableFlags.FLAG_IS_GROUP_BY_FIELD);
+		statsTable.addColumn("MinQuantity", ODLColumnType.DOUBLE, true, "groupmin("+ PredefinedTags.QUANTITY+")");
+		statsTable.addColumn("MaxQuantity", ODLColumnType.DOUBLE, true, "groupmax("+ PredefinedTags.QUANTITY+")");
+		statsTable.addColumn("AvgQuantity", ODLColumnType.DOUBLE, true, "groupavg("+ PredefinedTags.QUANTITY+")");
+		statsTable.addColumn("SumQuantity", ODLColumnType.DOUBLE, true, "groupsum("+ PredefinedTags.QUANTITY+")");
+		statsTable.addColumn("Count", ODLColumnType.DOUBLE, true, "groupcount()");
+		
 	}
 
 	private void addShapefileLoader(ScriptOption builder, ScriptBuilderBB bb) {
@@ -221,7 +256,7 @@ public class ScriptBuilder {
 		if (bb.shapefile == null) {
 			throw new RuntimeException("User quit");
 		}
-		
+
 		bb.shapefileLoader = builder.addDataAdapter("ShapefileLoader");
 		ScriptAdapterTable table = bb.shapefileLoader.addEmptyTable("Shapefile");
 		String shapefilename = bb.api.io().getAsRelativeIfWithinStandardShapefileDirectory(
@@ -232,20 +267,19 @@ public class ScriptBuilder {
 		table.addColumn("geom", ODLColumnType.GEOM, false, "the_geom");
 		// table.addColumn(PredefinedTags.ID, ODLColumnType.STRING, true,
 		// "this(sp(\"ShapefileIdField)\")");
-		table.addColumn(PredefinedTags.ID, ODLColumnType.STRING, false,
-				bb.shapefile.getIdField());
+		table.addColumn(PredefinedTags.ID, ODLColumnType.STRING, false, bb.shapefile.getIdField());
 	}
 
 	private void addPrepareData(ScriptBuilderBB bb) {
 		// add option to create input tables
-	//	ScriptOption prepare = bb.builder.addOption("Prepare data", "Prepare data");
+		// ScriptOption prepare = bb.builder.addOption("Prepare data", "Prepare data");
 		ScriptOption parentOption = bb.builder;
 		createTables(bb, parentOption);
 
 		// add option to add/remove entries for polygons
 		if (bb.type.polygons) {
 			String name = "Add missing areas to table, remove invalid ones";
-			ScriptOption updateAreas = parentOption.addOption(name,name);
+			ScriptOption updateAreas = parentOption.addOption(name, name);
 			updateAreas.setEditorLabel(
 					"Add missing areas to your table and remove those not found in the shapefile");
 
@@ -322,7 +356,7 @@ public class ScriptBuilder {
 
 	private ScriptOption addOptimiser(ScriptBuilderBB bb) {
 		ScriptOption optimise = bb.builder.addOption("Optimiser", "Optimiser");
-	//	addOptimiserSettings(bb, optimise);
+		// addOptimiserSettings(bb, optimise);
 		addOptionWithRunComponent(bb, optimise, "Start optimisation", ODLComponent.MODE_DEFAULT);
 		addOptionWithRunComponent(bb, optimise, "Continue optimisation",
 				TerritoriumComponent.CONTINUE_OPTIMISATION_MODE);
@@ -448,60 +482,109 @@ public class ScriptBuilder {
 				"ReportSolution" }) {
 			optionWithInstruction.getA().addCopyTable(
 					optionWithInstruction.getB().getOutputDatastoreId(),
-					bb.outputDfn.getTableAt(i).getName(), OutputType.REPLACE_CONTENTS_OF_EXISTING_TABLE,
-					outTableName);
+					bb.outputDfn.getTableAt(i).getName(),
+					OutputType.REPLACE_CONTENTS_OF_EXISTING_TABLE, outTableName);
 
 			i++;
 		}
 
 	}
 
-	private static String getTableName(ScriptAdapter adapter , int i){
+	private static String getTableName(ScriptAdapter adapter, int i) {
 		return adapter.getTable(i).getTableDefinition().getName();
 	}
-	
+
 	private void addQuantitiesReport(ScriptBuilderBB bb, ScriptOption parent) {
-		String name = "Show quantities report";
-		ScriptOption option = parent.addOption(name,name);
+		String name = "Show territory quantities report";
+		ScriptOption option = parent.addOption(name, name);
 		option.setSynced(true);
 		option.setEditorLabel("View the sum of quantities for each " + TERRITORY_ID_FIELD);
-		
+
 		// add a table to convert empty territory id to "#Unasssigned"
 		ScriptAdapter adapter1 = option.addDataAdapter("MarkUnassigned");
 		ScriptAdapterTable table1 = adapter1.addEmptyTable("MarkUnassigned");
-		table1.setSourceTable(bb.inputData.getAdapterId(), getTableName(bb.inputData,0));
-		table1.addColumn(TERRITORY_ID_FIELD, ODLColumnType.STRING, true, "if(len(\""+TERRITORY_ID_FIELD+"\")>0,\""+TERRITORY_ID_FIELD+"\",\"#Unassigned\")");
-		table1.addColumn(PredefinedTags.QUANTITY, ODLColumnType.DOUBLE, false, PredefinedTags.QUANTITY);
-		
-		ScriptAdapter adapter2=option.addDataAdapter("QuantitiesReportData");
-		ScriptAdapterTable table2=adapter2.addEmptyTable("Quantities");
-		table2.setSourceTable(adapter1.getAdapterId(), getTableName(adapter1,0));
+		table1.setSourceTable(bb.inputData.getAdapterId(), getTableName(bb.inputData, 0));
+		table1.addColumn(TERRITORY_ID_FIELD, ODLColumnType.STRING, true, "if(len(\""
+				+ TERRITORY_ID_FIELD + "\")>0,\"" + TERRITORY_ID_FIELD + "\",\"#Unassigned\")");
+		table1.addColumn(PredefinedTags.QUANTITY, ODLColumnType.DOUBLE, false,
+				PredefinedTags.QUANTITY);
+
+		ScriptAdapter adapter2 = option.addDataAdapter("QuantitiesReportData");
+		ScriptAdapterTable table2 = adapter2.addEmptyTable("Quantities");
+		table2.setSourceTable(adapter1.getAdapterId(), getTableName(adapter1, 0));
 		table2.setTableFilterFormula("len(\"" + TERRITORY_ID_FIELD + "\")>0");
-		
+
 		table2.addColumn(TERRITORY_ID_FIELD, ODLColumnType.STRING, false, TERRITORY_ID_FIELD);
 		table2.setColumnFlags(TERRITORY_ID_FIELD, TableFlags.FLAG_IS_GROUP_BY_FIELD);
 
-		table2.addColumn("quantity-sum", ODLColumnType.DOUBLE, true, "groupsum(\"" +PredefinedTags.QUANTITY+"\")");
+		table2.addColumn("quantity-sum", ODLColumnType.DOUBLE, true,
+				"groupsum(\"" + PredefinedTags.QUANTITY + "\")");
 
 		table2.addColumn("SortField", ODLColumnType.STRING, false, TERRITORY_ID_FIELD);
 		table2.setSortType(2, ColumnSortType.ASCENDING);
-		
+
 		ODLApi api = bb.api;
-		option.addInstruction(adapter2.getAdapterId(), api.standardComponents().tableViewer().getId(), ODLComponent.MODE_DEFAULT);
+		option.addInstruction(adapter2.getAdapterId(),
+				api.standardComponents().tableViewer().getId(), ODLComponent.MODE_DEFAULT);
 	}
-	
+
 	private void addMapWithoutCentres(ScriptBuilderBB bb, ScriptOption parent) {
-		String name = "Show map";
+		String name = "Show territories map";
 		ScriptOption option = parent.addOption(name, name);
 		option.setSynced(true);
 		ScriptAdapter mapAdapter = option.addDataAdapter(name + " adapter");
 		addCustomersOrBricksMapTable(bb, null, mapAdapter);
 		addMapInstruction(bb, option, mapAdapter);
+	}
 
+	private void addPolygonQuantitiesHeatMap(ScriptBuilderBB bb, ScriptOption parent) {
+		String name = "Show quantities heatmap";
+		ScriptOption option = parent.addOption(name, name);
+		option.setSynced(true);
+		
+		ScriptAdapter mapAdapter = option.addDataAdapter(name + " adapter");
+
+		Maps maps = bb.api.standardComponents().map();
+		ScriptAdapterTable polygons = mapAdapter
+				.addSourcelessTable(maps.getDrawableTableDefinition());
+		polygons.setSourceTable(bb.inputData.getAdapterId(), getTableName(bb.inputData, 0));
+
+		polygons.setSourceColumns(new String[][] { new String[] { PredefinedTags.LATITUDE, "" },
+				new String[] { PredefinedTags.LONGITUDE, "" }, });
+		setStdPolygonFormula(polygons);
+
+		// Lookup geom
+		String geomlookup = getGeometryLookupFormula(bb);
+		polygons.setFormula("geometry", geomlookup);
+		polygons.setTableFilterFormula(geomlookup + "!=null");
+		polygons.setFormula("pixelWidth", "2");
+
+		// Create lookup max formula
+		String lookupMax = "lookup(\"" + bb.quantityStats.getAdapterId() + ","
+				+ getTableName(bb.quantityStats, 0) + "\",\"MaxQuantity\")";
+		
+		String legendKeyFormula = "legendrangetext(0," + lookupMax+",10,"+ PredefinedTags.QUANTITY + ")";
+		String colourFormula = "if(" + lookupMax + ">0,cold2hot("+ PredefinedTags.QUANTITY+"/"+lookupMax + "),colour(0,0,0))";
+		
+		polygons.setFormulae(new String[][] {
+
+				new String[] { "legendKey", legendKeyFormula },
+
+				new String[] { "colour", colourFormula },
+
+		});
+
+		addMapInstruction(bb, option, mapAdapter);
+	}
+
+	private void setStdPolygonFormula(ScriptAdapterTable polygons) {
+		polygons.setFormula("opaque", "0.3");
+		polygons.setFormula("NonOverlappingPolygonLayerGroupKey", "\"A\"");
 	}
 
 	private void addMapWithCentres(ScriptBuilderBB bb, ScriptOption parent) {
-		ScriptOption option = parent.addOption("Show map with centres", "Show map with centres");
+		ScriptOption option = parent.addOption("Show territories map with centres",
+				"Show map with centres");
 		option.setSynced(true);
 
 		// always update so we get correct cluster colours (and the table is initialised)
@@ -564,8 +647,8 @@ public class ScriptBuilder {
 		});
 	}
 
-	private void addCustomersOrBricksMapTable(ScriptBuilderBB bb, ScriptInstruction updateInstruction,
-			ScriptAdapter mapDataAdapter) {
+	private void addCustomersOrBricksMapTable(ScriptBuilderBB bb,
+			ScriptInstruction updateInstruction, ScriptAdapter mapDataAdapter) {
 		// setup customers to draw coloured using the cluster colour, or black if unassigned
 		Maps maps = bb.api.standardComponents().map();
 		ScriptAdapterTable customers = mapDataAdapter
@@ -584,14 +667,10 @@ public class ScriptBuilder {
 			customers
 					.setSourceColumns(new String[][] { new String[] { PredefinedTags.LATITUDE, "" },
 							new String[] { PredefinedTags.LONGITUDE, "" }, });
-			customers.setFormula("opaque", "0.3");
-			customers.setFormula("NonOverlappingPolygonLayerGroupKey", "\"A\"");
+			setStdPolygonFormula(customers);
 
 			// Lookup geom
-			String geomlookup = "lookup(" + PredefinedTags.ID + ",\""
-					+ bb.shapefileLoader.getAdapterId() + ","
-					+ bb.shapefileLoader.getTable(0).getTableDefinition().getName() + "\"" + ",c(\""
-					+ PredefinedTags.ID + "\")" + ",c(\"geom\"))";
+			String geomlookup = getGeometryLookupFormula(bb);
 			customers.setFormula("geometry", geomlookup);
 			customers.setTableFilterFormula(geomlookup + "!=null");
 			customers.setFormula("pixelWidth", "2");
@@ -601,7 +680,7 @@ public class ScriptBuilder {
 		String isAssignedFormula = null;
 		String SPCH = "\"";
 		String hasId = "len(\"" + TERRITORY_ID_FIELD + "\")>0";
-		String randColour  = "randColour(\"" + TERRITORY_ID_FIELD + "\")";
+		String randColour = "randColour(\"" + TERRITORY_ID_FIELD + "\")";
 		if (updateInstruction != null || bb.type.inputClusters) {
 			String clustersTable = "";
 			if (updateInstruction != null) {
@@ -616,7 +695,8 @@ public class ScriptBuilder {
 
 			String first3LookupParams = "\"" + TERRITORY_ID_FIELD + "\"," + clustersTable
 					+ ",\"id\"";
-			isAssignedFormula ="("+hasId+")"+ " && "+ "lookupcount(" + first3LookupParams + ")>0";
+			isAssignedFormula = "(" + hasId + ")" + " && " + "lookupcount(" + first3LookupParams
+					+ ")>0";
 			lookupColourFormula = "lookup(" + first3LookupParams + ",\"display-colour\")";
 		} else {
 			isAssignedFormula = hasId;
@@ -624,17 +704,20 @@ public class ScriptBuilder {
 		}
 
 		// We have assigned, bad id and unassigned
-		String baseFormula = "if(" + isAssignedFormula + ",#OK#" + ",if("+hasId + ",#BADID#,#UNASSIGNED#))";
-		String legendKeyFormula =baseFormula.replace("#OK#", SPCH+TERRITORY_ID_FIELD+SPCH);
-		legendKeyFormula=legendKeyFormula.replace("#BADID#", SPCH + "(Unrecognised) "+SPCH + " & "+ SPCH + TERRITORY_ID_FIELD + SPCH );
+		String baseFormula = "if(" + isAssignedFormula + ",#OK#" + ",if(" + hasId
+				+ ",#BADID#,#UNASSIGNED#))";
+		String legendKeyFormula = baseFormula.replace("#OK#", SPCH + TERRITORY_ID_FIELD + SPCH);
+		legendKeyFormula = legendKeyFormula.replace("#BADID#",
+				SPCH + "(Unrecognised) " + SPCH + " & " + SPCH + TERRITORY_ID_FIELD + SPCH);
 		legendKeyFormula = legendKeyFormula.replace("#UNASSIGNED#", SPCH + "#Unassigned" + SPCH);
-		
+
 		String colourFormula = baseFormula.replace("#OK#", lookupColourFormula);
-		colourFormula = colourFormula.replace("#BADID#", "lerp(colour(1,0,0)," + randColour + ",0.2)");
+		colourFormula = colourFormula.replace("#BADID#",
+				"lerp(colour(1,0,0)," + randColour + ",0.2)");
 		colourFormula = colourFormula.replace("#UNASSIGNED#", "colour(0,0,0)");
-//		String legendKeyFormula = "if(" + isAssignedFormula + ",\"" + TERRITORY_ID_FIELD
-//				+ "\",\"#Unassigned\"";
-//		lookupColourFormula = "if(" + isAssignedFormula + "," + lookupColourFormula + ",\"Black\"";
+		// String legendKeyFormula = "if(" + isAssignedFormula + ",\"" + TERRITORY_ID_FIELD
+		// + "\",\"#Unassigned\"";
+		// lookupColourFormula = "if(" + isAssignedFormula + "," + lookupColourFormula + ",\"Black\"";
 		customers.setFormulae(new String[][] {
 
 				new String[] { "legendKey", legendKeyFormula },
@@ -644,5 +727,12 @@ public class ScriptBuilder {
 		});
 	}
 
+	private String getGeometryLookupFormula(ScriptBuilderBB bb) {
+		String geomlookup = "lookup(" + PredefinedTags.ID + ",\""
+				+ bb.shapefileLoader.getAdapterId() + ","
+				+ bb.shapefileLoader.getTable(0).getTableDefinition().getName() + "\"" + ",c(\""
+				+ PredefinedTags.ID + "\")" + ",c(\"geom\"))";
+		return geomlookup;
+	}
 
 }
