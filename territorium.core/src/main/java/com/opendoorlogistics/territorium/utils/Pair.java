@@ -15,7 +15,9 @@
  *******************************************************************************/
 package com.opendoorlogistics.territorium.utils;
 
-public class Pair<A,B> {
+import java.util.Map;
+
+public class Pair<A,B> implements Map.Entry<A,B>{
 	private A a;
 	private B b;
 	
@@ -68,6 +70,27 @@ public class Pair<A,B> {
 		} else if (!b.equals(other.b))
 			return false;
 		return true;
+	}
+
+
+	@Override
+	public A getKey() {
+		return a;
+	}
+
+
+	@Override
+	public B getValue() {
+		return b;
+	}
+
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public B setValue(B value) {
+		B old = b;
+		this.b = value;
+		return old;
 	}
 	
 	
