@@ -15,13 +15,10 @@
  *******************************************************************************/
 package com.opendoorlogistics.territorium.optimiser.solver;
 
-import com.opendoorlogistics.territorium.optimiser.components.LocalSearch;
-import com.opendoorlogistics.territorium.optimiser.components.ProblemSplitter;
-import com.opendoorlogistics.territorium.optimiser.components.RandomisedCentreSelector;
-import com.opendoorlogistics.territorium.optimiser.components.RandomisedWeightBasedCustomerAssignment;
-import com.opendoorlogistics.territorium.optimiser.components.Ruin;
 import com.opendoorlogistics.territorium.optimiser.components.LocalSearch.LocalSearchConfig;
 import com.opendoorlogistics.territorium.optimiser.components.ProblemSplitter.ProblemSplitterConfig;
+import com.opendoorlogistics.territorium.optimiser.components.RandomisedCentreSelector;
+import com.opendoorlogistics.territorium.optimiser.components.RandomisedWeightBasedCustomerAssignment;
 import com.opendoorlogistics.territorium.optimiser.components.Ruin.RuinConfig;
 import com.opendoorlogistics.territorium.optimiser.solver.SolutionBank.SolutionBankConfig;
 

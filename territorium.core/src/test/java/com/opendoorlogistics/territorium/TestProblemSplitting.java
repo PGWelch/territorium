@@ -52,8 +52,8 @@ import com.opendoorlogistics.territorium.utils.SVGWriter.XYCoordTransformer;
 
 public class TestProblemSplitting {
 	private static Problem buildProblem(Random random) {
-		return new XYMinMaxQuantitiesHeterogeneousClusters().setMaxQuantity(100).setMinQuantity(1).setNbCustomers(100)
-				.setNbClusters(10).setQuantityDistributionRandPower(3).setTotalClusterCapacityMultiplier(1.2)
+		return new XYMinMaxQuantitiesHeterogeneousClusters().setMaxCustomerQuantity(100).setMinCustomerQuantity(1).setNbCustomers(100)
+				.setNbClusters(10).setCustomerQuantityDistributionRandPower(3).setTotalClusterCapacityMultiplier(1.2)
 				.setTotalClusterMinQuantityMultiplier(0.8).build(random);
 	}
 
@@ -358,7 +358,7 @@ public class TestProblemSplitting {
 		
 		System.out.println("Mean split improves =" + splitImprovesStats.getAverage());
 		System.out.println("Mean unsplit improves =" + unsplitImprovesStats.getAverage());
-		assertTrue("Less unsplit improves than split improves", unsplitImprovesStats.getAverage() < 0.75 * splitImprovesStats.getAverage());
+		assertTrue("Less unsplit improves than split improves", unsplitImprovesStats.getAverage() < 0.8 * splitImprovesStats.getAverage());
 	}
 
 

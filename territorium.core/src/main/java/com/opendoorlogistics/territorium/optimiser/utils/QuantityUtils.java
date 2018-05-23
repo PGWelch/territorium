@@ -18,16 +18,25 @@ package com.opendoorlogistics.territorium.optimiser.utils;
 import com.opendoorlogistics.territorium.problem.Cluster;
 import com.opendoorlogistics.territorium.problem.Customer;
 import com.opendoorlogistics.territorium.problem.Problem;
+import com.opendoorlogistics.territorium.problem.Problem.QuantityViolationType;
 
 public class QuantityUtils {
-	public static double getAbsQuantityViolation(Cluster cluster, double quantity){
+	public static double getAbsQuantityViolation(Cluster cluster, double quantity, QuantityViolationType qvt){
+		// get the linear abs violation
+		double linear=0;
 		if(quantity < cluster.getMinQuantity()){
-			return cluster.getMinQuantity() - quantity;
+			linear = cluster.getMinQuantity() - quantity;
 		}
 		else if(quantity > cluster.getMaxQuantity()){
-			return quantity - cluster.getMaxQuantity();
+			linear =quantity - cluster.getMaxQuantity();
 		}
-		return 0;
+		
+		// do the square if the violation type is square
+		if(qvt == QuantityViolationType.SQUARE){
+			return linear*linear;
+		}
+		
+		return linear;
 	}
 
 	public static double getTotalQuantity(Problem problem){

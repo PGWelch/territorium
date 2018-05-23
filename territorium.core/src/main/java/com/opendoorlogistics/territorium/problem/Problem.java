@@ -21,11 +21,16 @@ import java.util.List;
 import com.opendoorlogistics.territorium.problem.location.Location;
 
 public class Problem extends ObjectWithJSONToString{
-
+	private QuantityViolationType quantityViolationType = QuantityViolationType.LINEAR;
 	private List<Customer> customers = new ArrayList<>();
 	private List<Cluster> clusters= new ArrayList<>();
 	private TravelMatrix travelMatrix=null;
 
+	public enum QuantityViolationType{
+		LINEAR,
+		SQUARE
+	}
+	
 	public Problem(List<Customer> customers,List<Cluster> clusters,TravelMatrix travelMatrix) {
 		this.customers= customers;
 		this.clusters = clusters;
@@ -106,6 +111,14 @@ public class Problem extends ObjectWithJSONToString{
 			}
 		});
 		return ret;
+	}
+
+	public QuantityViolationType getQuantityViolationType() {
+		return quantityViolationType;
+	}
+
+	public void setQuantityViolationType(QuantityViolationType quantityViolationType) {
+		this.quantityViolationType = quantityViolationType;
 	}
 	
 

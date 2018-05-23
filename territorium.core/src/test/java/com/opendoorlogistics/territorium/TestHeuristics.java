@@ -47,8 +47,8 @@ public class TestHeuristics {
 	private Problem problem = buildProblem(random);
 
 	private static Problem buildProblem(Random random) {
-		return new XYMinMaxQuantitiesHeterogeneousClusters().setMaxQuantity(100).setMinQuantity(1).setNbCustomers(100)
-				.setNbClusters(10).setQuantityDistributionRandPower(3).setTotalClusterCapacityMultiplier(1.2)
+		return new XYMinMaxQuantitiesHeterogeneousClusters().setMaxCustomerQuantity(100).setMinCustomerQuantity(1).setNbCustomers(100)
+				.setNbClusters(10).setCustomerQuantityDistributionRandPower(3).setTotalClusterCapacityMultiplier(1.2)
 				.setTotalClusterMinQuantityMultiplier(0.8).build(random);
 	}
 

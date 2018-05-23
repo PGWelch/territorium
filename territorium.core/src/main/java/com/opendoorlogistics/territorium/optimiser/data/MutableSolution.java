@@ -106,7 +106,7 @@ final public class MutableSolution implements ImmutableSolution {
 		
 		private double getQuantityViolationChangeForQuantityChange(double quantityChange){
 			double newQuant = quantity + quantityChange;
-			double newViolation = QuantityUtils.getAbsQuantityViolation(cluster, newQuant);
+			double newViolation = QuantityUtils.getAbsQuantityViolation(cluster, newQuant,problem.getQuantityViolationType());
 			double oldViolation = cost.getQuantityViolation();
 			
 			// check for equals to help ward off rounding error...
@@ -187,7 +187,7 @@ final public class MutableSolution implements ImmutableSolution {
 //			}
 
 			// Calculate capacity violation
-			cost.setQuantityViolation(QuantityUtils.getAbsQuantityViolation(cluster, quantity));
+			cost.setQuantityViolation(QuantityUtils.getAbsQuantityViolation(cluster, quantity,problem.getQuantityViolationType()));
 
 			if (!isValidState()) {
 				throw new RuntimeException();

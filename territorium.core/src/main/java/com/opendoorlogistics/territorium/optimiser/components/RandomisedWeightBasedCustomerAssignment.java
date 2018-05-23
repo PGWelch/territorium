@@ -290,6 +290,12 @@ public class RandomisedWeightBasedCustomerAssignment {
 		return bb.solnState.bestCluster;
 	}
 
+	/**
+	 * Loop over all clusters in random order, systematically varying their
+	 * transport cost multipliers so if all customers are assigned to their 
+	 * cluster with cheapest transport cost, the quantity violation is minimised
+	 * @param bb
+	 */
 	private void singleStep(Blackboard bb) {
 		ImmutableData immutable = bb.immutable;
 		int p = immutable.clusters.size();
@@ -326,7 +332,7 @@ public class RandomisedWeightBasedCustomerAssignment {
 				}
 			}
 			
-			// incude current otherwise solution can get worse!
+			// include current otherwise solution can get worse!
 			toTry.add(currentMultiplier);
 
 			for (double testMultiplier : toTry) {
@@ -400,7 +406,7 @@ public class RandomisedWeightBasedCustomerAssignment {
 		state.sumAbsQuantityViolation = 0;
 		for (int i = 0; i < state.quantityViolations.length; i++) {
 			state.quantityViolations[i] = QuantityUtils.getAbsQuantityViolation(immutable.clusters.get(i),
-					state.quantities[i]);
+					state.quantities[i], problem.getQuantityViolationType());
 			state.sumAbsQuantityViolation += state.quantityViolations[i];
 		}
 	}

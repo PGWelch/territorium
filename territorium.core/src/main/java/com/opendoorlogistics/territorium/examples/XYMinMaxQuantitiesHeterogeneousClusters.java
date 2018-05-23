@@ -27,7 +27,6 @@ import com.opendoorlogistics.territorium.optimiser.solver.SolverStateSummary;
 import com.opendoorlogistics.territorium.problem.ArrayBasedTravelMatrix;
 import com.opendoorlogistics.territorium.problem.Cluster;
 import com.opendoorlogistics.territorium.problem.Customer;
-import com.opendoorlogistics.territorium.problem.DistanceTime;
 import com.opendoorlogistics.territorium.problem.Problem;
 import com.opendoorlogistics.territorium.problem.location.XYLocation;
 import com.opendoorlogistics.territorium.utils.SVGWriter;
@@ -37,9 +36,9 @@ public class XYMinMaxQuantitiesHeterogeneousClusters {
 	private static final Logger LOGGER = Logger.getLogger(XYMinMaxQuantitiesHeterogeneousClusters.class.getName());
 	private int nbCustomers=100;
 	private int nbClusters=10;
-	private double maxQuantity=100;
-	private double minQuantity=1;
-	private int quantityDistributionRandPower=3;
+	private double maxCustomerQuantity=100;
+	private double minCustomerQuantity=1;
+	private int customerQuantityDistributionRandPower=3;
 	private double totalClusterCapacityMultiplier = 1.2;
 	private double totalClusterMinQuantityMultiplier = 0.8;
 	
@@ -49,8 +48,8 @@ public class XYMinMaxQuantitiesHeterogeneousClusters {
 	}
 
 	
-	public XYMinMaxQuantitiesHeterogeneousClusters setQuantityDistributionRandPower(int quantityDistributionRandPower) {
-		this.quantityDistributionRandPower = quantityDistributionRandPower;
+	public XYMinMaxQuantitiesHeterogeneousClusters setCustomerQuantityDistributionRandPower(int quantityDistributionRandPower) {
+		this.customerQuantityDistributionRandPower = quantityDistributionRandPower;
 		return this;
 	}
 
@@ -73,13 +72,13 @@ public class XYMinMaxQuantitiesHeterogeneousClusters {
 	}
 	
 	
-	public XYMinMaxQuantitiesHeterogeneousClusters setMaxQuantity(double val){
-		maxQuantity = val;
+	public XYMinMaxQuantitiesHeterogeneousClusters setMaxCustomerQuantity(double val){
+		maxCustomerQuantity = val;
 		return this;
 	}
 
-	public XYMinMaxQuantitiesHeterogeneousClusters setMinQuantity(double val){
-		minQuantity = val;
+	public XYMinMaxQuantitiesHeterogeneousClusters setMinCustomerQuantity(double val){
+		minCustomerQuantity = val;
 		return this;
 	}
 	
@@ -90,16 +89,16 @@ public class XYMinMaxQuantitiesHeterogeneousClusters {
 		int locIndx=0;
 		Problem problem = new Problem();
 		double sumQuantity=0;
-		double quantityRange = maxQuantity - minQuantity;
+		double quantityRange = maxCustomerQuantity - minCustomerQuantity;
 		for(int i =0 ; i< nbCustomers ; i++){
 			Customer customer = new Customer();
 			
 			// quantity
 			double rand = 1;
-			for(int j=0;j<quantityDistributionRandPower;j++){
+			for(int j=0;j<customerQuantityDistributionRandPower;j++){
 				rand *= random.nextDouble();
 			}
-			customer.setQuantity( minQuantity + quantityRange * rand);
+			customer.setQuantity( minCustomerQuantity + quantityRange * rand);
 			sumQuantity += customer.getQuantity();
 			
 			// location

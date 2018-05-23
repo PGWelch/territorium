@@ -55,17 +55,25 @@ public class Solver {
 
 		ruin = new Ruin(problem, config.getRuinConfig(), random);
 		customer2CustomerClosestNgbMatrix = new Customer2CustomerClosestNgbMatrixImpl(problem);
-		localSearch = new LocalSearch(problem, config.getLocalSearchConfig(), customer2CustomerClosestNgbMatrix,
-				random);
+		localSearch = new LocalSearch(this.problem, this.config.getLocalSearchConfig(), this.customer2CustomerClosestNgbMatrix,
+				this.random);
 
 	}
+
+//	/**
+//	 * @return
+//	 */
+//	private LocalSearch createLocalSearch() {
+//		return new LocalSearch(this.problem, this.config.getLocalSearchConfig(), this.customer2CustomerClosestNgbMatrix,
+//				this.random);
+//	}
 
 	public enum SolutionConstructionType {
 		RANDOM_WEIGHT_BASED_PLUS_LOCAL_SEARCH, LOCAL_SEARCH_CONSTRUCTION;
 
 	}
 
-	public void constructNewSolution(SolverStateSummaryImpl state) {
+	public synchronized void constructNewSolution(SolverStateSummaryImpl state) {
 		//state.push("Create new sol");
 
 		// choose comparator at random
@@ -99,7 +107,7 @@ public class Solver {
 
 	}
 
-	public MutableSolution constructRandWeightBasedPlusLocalSearchSingleStepSol(Comparator<Cost> comparator) {
+	public synchronized MutableSolution constructRandWeightBasedPlusLocalSearchSingleStepSol(Comparator<Cost> comparator) {
 		MutableSolution newSol;
 		// construct using rand weight
 		int[] initialAssigned = new RandomisedWeightBasedCustomerAssignment(problem, config.getWeightBasedAssigner(),
@@ -112,7 +120,7 @@ public class Solver {
 		return newSol;
 	}
 
-	public ImmutableSolution solve(int[] startingAssignment) {
+	public synchronized ImmutableSolution solve(int[] startingAssignment) {
 		
 		// create initial solution object using input if we have it
 		MutableSolution initialSol = null;
@@ -215,7 +223,7 @@ public class Solver {
 		}
 	}
 
-	public void runSingleOuterStep(SolutionBank bank) {
+	public synchronized void runSingleOuterStep(SolutionBank bank) {
 		runSingleOuterStep(new SolverStateSummaryImpl(bank));
 	}
 
@@ -353,13 +361,18 @@ public class Solver {
 
 			// run single step of local search
 			state.push("");
-			improved = localSearch.runSingleStep(innerStep++, comparator, newSol);
 			localSearch.setContinueLocalSearchCallback(s->{
 				state.pop();
 				state.push(s);
 				return state.isContinue();
 			});
+			improved = localSearch.runSingleStep(innerStep++, comparator, newSol);
 			state.pop();
+			
+			// remember to clear the continue search callback from the local
+			// search so we don't accidently call it when we should be using
+			// a different state and stack object later...
+			localSearch.setContinueLocalSearchCallback(null);
 			
 			if (stepEndedListener != null) {
 				stepEndedListener.accept(newSol);
