@@ -7,6 +7,7 @@
 package com.opendoorlogistics.territorium.optimiser.data;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import com.opendoorlogistics.territorium.optimiser.utils.QuantityUtils;
 import com.opendoorlogistics.territorium.problem.Cluster;
@@ -117,8 +118,18 @@ final public class MutableSolution implements ImmutableSolution {
 		}
 
 		private void updateAll() {
-			// assert saveCostChecker();
-
+			// Sort assigned customers by index.
+			// When we have a target centre and 2 customers, the
+			// most central customer is arbitrary (either has equal cost)
+			// and is determined by the order of customers in the assigned
+			// list. This can create problems, as solution updates can give
+			// different costs dependent on the ordering in the customer
+			// list. This can cause an infinite loop in the local search
+			// where we search until no improvement.
+			// We therefore sort customers by index so the update
+			// becomes deterministic.
+			Collections.sort(assignedCustomers, (c1,c2)->Integer.compare(c1.index, c2.index));;
+			
 			quantity = 0;
 			int n = assignedCustomers.size();
 			fixedCentreTravelCostToCustomers = 0;

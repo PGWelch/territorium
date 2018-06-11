@@ -120,6 +120,29 @@ public class Solver {
 		return newSol;
 	}
 
+	/**
+	 * Create a solution using greedy local search only
+	 * @return
+	 */
+	public synchronized ImmutableSolution greedyLocalSearchOnlySolve(){
+		MutableSolution initialSol = new MutableSolution(problem, null);
+		// Just return an empty solution if nothing is assignable as later heuristics will throw exceptions
+		if(isEmptyProblem()){
+			return initialSol;
+		}
+				
+		SolverStateSummaryImpl state = new SolverStateSummaryImpl(
+				new SolutionBank(config.getSolutionBankConfig(), problem, random));
+
+		CostComparatorWithTags stdCmp = state.bank.getStandardComparator();
+		localSearch.assignUnassignedCustomers(stdCmp, initialSol);
+
+		runUntilLocalOptimum(state, stdCmp, localSearch, initialSol, s -> state.bank.accept(s,
+				new SearchComponentsTags(TagType.INITIAL_LSOPT).addTags(stdCmp.getTags())));
+
+		return state.getBestSolution();
+	}
+	
 	public synchronized ImmutableSolution solve(int[] startingAssignment) {
 		
 		// create initial solution object using input if we have it
@@ -132,7 +155,7 @@ public class Solver {
 		}
 
 		// Just return an empty solution if nothing is assignable as later heuristics will throw exceptions
-		if(problem.getCustomers().size()==0 || problem.getClusters().size()==0){
+		if(isEmptyProblem()){
 			return initialSol;
 		}
 		
@@ -159,6 +182,13 @@ public class Solver {
 
 		return state.getBestSolution();
 
+	}
+
+	/**
+	 * @return
+	 */
+	private boolean isEmptyProblem() {
+		return problem.getCustomers().size()==0 || problem.getClusters().size()==0;
 	}
 
 	private class SolverStateSummaryImpl implements SolverStateSummary {
