@@ -120,31 +120,46 @@ public class Solver {
 		return newSol;
 	}
 
+//	/**
+//	 * Create a solution using greedy local search only
+//	 * @return
+//	 */
+//	public synchronized ImmutableSolution greedyLocalSearchOnlySolve(){
+//		MutableSolution initialSol = new MutableSolution(problem, null);
+//		// Just return an empty solution if nothing is assignable as later heuristics will throw exceptions
+//		if(isEmptyProblem()){
+//			return initialSol;
+//		}
+//				
+//		SolverStateSummaryImpl state = new SolverStateSummaryImpl(
+//				new SolutionBank(config.getSolutionBankConfig(), problem, random));
+//
+//		CostComparatorWithTags stdCmp = state.bank.getStandardComparator();
+//		localSearch.assignUnassignedCustomers(stdCmp, initialSol);
+//
+//		runUntilLocalOptimum(state, stdCmp, localSearch, initialSol, s -> state.bank.accept(s,
+//				new SearchComponentsTags(TagType.INITIAL_LSOPT).addTags(stdCmp.getTags())));
+//
+//		return state.getBestSolution();
+//	}
+	
+	public synchronized ImmutableSolution solve(int[] startingAssignment) {		
+		return internalSolve(startingAssignment,false);
+	}
+
+
+	public synchronized ImmutableSolution greedyImprove(int[] startingAssignment) {		
+		return internalSolve(startingAssignment,true);
+	}
+
 	/**
-	 * Create a solution using greedy local search only
+	 * @param startingAssignment
+	 * @param greedy If true the initial solution is constructed (if any are unassigned)
+	 * and improved via local search until no further improvement possible, but no
+	 *  subsequent solutions are tried (i.e. no ruin and recreate)
 	 * @return
 	 */
-	public synchronized ImmutableSolution greedyLocalSearchOnlySolve(){
-		MutableSolution initialSol = new MutableSolution(problem, null);
-		// Just return an empty solution if nothing is assignable as later heuristics will throw exceptions
-		if(isEmptyProblem()){
-			return initialSol;
-		}
-				
-		SolverStateSummaryImpl state = new SolverStateSummaryImpl(
-				new SolutionBank(config.getSolutionBankConfig(), problem, random));
-
-		CostComparatorWithTags stdCmp = state.bank.getStandardComparator();
-		localSearch.assignUnassignedCustomers(stdCmp, initialSol);
-
-		runUntilLocalOptimum(state, stdCmp, localSearch, initialSol, s -> state.bank.accept(s,
-				new SearchComponentsTags(TagType.INITIAL_LSOPT).addTags(stdCmp.getTags())));
-
-		return state.getBestSolution();
-	}
-	
-	public synchronized ImmutableSolution solve(int[] startingAssignment) {
-		
+	private ImmutableSolution internalSolve(int[] startingAssignment, boolean greedy) {
 		// create initial solution object using input if we have it
 		MutableSolution initialSol = null;
 		// for (int i = 0; i < 100; i++) {
@@ -175,13 +190,14 @@ public class Solver {
 			state.pop();
 		}
 
-		while (state.isContinue() && state.nbOuterSteps < config.getNbOuterSteps()) {
-			runSingleOuterStep(state);
-			state.nbOuterSteps++;
+		if(!greedy){
+			while (state.isContinue() && state.nbOuterSteps < config.getNbOuterSteps()) {
+				runSingleOuterStep(state);
+				state.nbOuterSteps++;
+			}			
 		}
 
 		return state.getBestSolution();
-
 	}
 
 	/**
