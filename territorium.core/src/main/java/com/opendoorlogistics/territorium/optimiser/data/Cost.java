@@ -40,11 +40,12 @@ public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
 	
 	@Override
 	public int compareTo(Cost o) {
-		int diff = Double.compare(quantityViolation, o.quantityViolation);
-		if(diff==0){
-			diff = Double.compare(travel, o.travel);
-		}
-		return diff;
+		return approxCompare(this, o);
+//		int diff = Double.compare(quantityViolation, o.quantityViolation);
+//		if(diff==0){
+//			diff = Double.compare(travel, o.travel);
+//		}
+//		return diff;
 	}
 	
 	@JsonIgnore
@@ -108,7 +109,7 @@ public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
 		return "trv=" + MAX_3_DP.format(travel) + ", qv=" + MAX_3_DP.format(quantityViolation) ;
 	}
 	
-	private final static double ROUNDOFF_FRACTION = 0.000000001;
+	private final static double ROUNDOFF_FRACTION = 0.00000001;
 
 	public static boolean isApproxEqual(Cost a, Cost b){
 		return isApproxEqualCapacityViolation(a, b)
@@ -136,16 +137,21 @@ public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
 			
 			@Override
 			public int compare(Cost o1, Cost o2) {
-				if(!isApproxEqualCapacityViolation(o1, o2)){
-					return o1.getQuantityViolation() < o2.getQuantityViolation() ?-1:+1;
-				}
-				
-				if(!isApproxEqualTravelCost(o1, o2)){
-					return o1.getTravel() < o2.getTravel() ?-1:+1;					
-				}
-				return 0;
+				return approxCompare(o1, o2);
 			}
+
+
 		};
 	}
-	
+
+	private static int approxCompare(Cost o1, Cost o2) {
+		if(!isApproxEqualCapacityViolation(o1, o2)){
+			return o1.getQuantityViolation() < o2.getQuantityViolation() ?-1:+1;
+		}
+		
+		if(!isApproxEqualTravelCost(o1, o2)){
+			return o1.getTravel() < o2.getTravel() ?-1:+1;					
+		}
+		return 0;
+	}
 }

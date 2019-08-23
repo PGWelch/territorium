@@ -426,6 +426,8 @@ public class Solver {
 
 			state.pop();
 		}
+		
+	//	System.out.print(innerStep + " ");
 	}
 
 }
