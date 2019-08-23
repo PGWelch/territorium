@@ -346,7 +346,7 @@ public class Solver {
 
 		// Split problems
 		state.push("Split");
-		ProblemSplitter splitter = new ProblemSplitter(problem, random, config.getProblemSplitterConfig());
+		ProblemSplitter splitter = new ProblemSplitter(problem, random, config);
 		List<Subproblem> subproblems = splitter.splitIntoSubproblems(random, initialSol.getCustomersToClusters(),
 				nbSubproblems, customer2CustomerClosestNgbMatrix);
 

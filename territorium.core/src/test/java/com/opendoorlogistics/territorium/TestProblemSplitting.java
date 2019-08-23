@@ -78,7 +78,7 @@ public class TestProblemSplitting {
 		}
 		Helper helper = new Helper();
 
-		ProblemSplitter splitter = new ProblemSplitter(problem, random, new ProblemSplitterConfig());
+		ProblemSplitter splitter = new ProblemSplitter(problem, random, new SolverConfig());
 		Customer2CustomerClosestNgbMatrix customer2CustomerClosestNgbMatrix = new Customer2CustomerClosestNgbMatrixImpl(
 				problem);
 		LocalSearch ls = new LocalSearch(problem, new LocalSearchConfig(), customer2CustomerClosestNgbMatrix,
@@ -292,7 +292,7 @@ public class TestProblemSplitting {
 		for (int iproblem = 0; iproblem < 20; iproblem++) {
 			Problem problem = buildProblem(random);
 
-			ProblemSplitter splitter = new ProblemSplitter(problem, random, new ProblemSplitterConfig());
+			ProblemSplitter splitter = new ProblemSplitter(problem, random, new SolverConfig());
 			Customer2CustomerClosestNgbMatrix customer2CustomerClosestNgbMatrix = new Customer2CustomerClosestNgbMatrixImpl(
 					problem);
 			LocalSearch ls = new LocalSearch(problem, new LocalSearchConfig(), new Customer2CustomerClosestNgbMatrixImpl(

@@ -22,7 +22,7 @@
 	<parent>
         <groupId>com.opendoorlogistics</groupId>
         <artifactId>territorium</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
     </parent>
 	
 	<dependencies>
@@ -44,7 +44,7 @@
 		<dependency>
 			<groupId>com.opendoorlogistics</groupId>
 			<artifactId>territorium.core</artifactId>
-			<version>1.0.0</version>
+			<version>1.0.2</version>
 		</dependency>
 	</dependencies>
 	

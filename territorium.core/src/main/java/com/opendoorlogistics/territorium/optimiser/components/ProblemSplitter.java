@@ -39,7 +39,7 @@ import gnu.trove.list.array.TIntArrayList;
 public class ProblemSplitter {
 	private final Problem problem;
 	private final Random random;
-	private final ProblemSplitterConfig config;
+	private final SolverConfig config;
 	
 	public static class ProblemSplitterConfig{
 		private double minFractionOfAverage=0.5;
@@ -59,7 +59,7 @@ public class ProblemSplitter {
 		
 	}
 	
-	public ProblemSplitter(Problem problem, Random random, ProblemSplitterConfig config) {
+	public ProblemSplitter(Problem problem, Random random, SolverConfig config) {
 		this.problem = problem;
 		this.random = random;
 		this.config = config;
@@ -306,8 +306,8 @@ public class ProblemSplitter {
 		
 		// get min and max quantities based on the average quantity and ensuring at least 2 per cluster
 		double averageQuantity = (double)pseudoCustomers.size() / nbSubproblems;
-		double minQuantity = Math.max(2,averageQuantity * config.getMinFractionOfAverage());
-		double maxQuantity = averageQuantity * config.getMaxFractionOfAverage();
+		double minQuantity = Math.max(2,averageQuantity * config.getProblemSplitterConfig().getMinFractionOfAverage());
+		double maxQuantity = averageQuantity * config.getProblemSplitterConfig().getMaxFractionOfAverage();
 
 		// Create an input cluster for each subproblem
 		ArrayList<Cluster> clusters = new ArrayList<>();
