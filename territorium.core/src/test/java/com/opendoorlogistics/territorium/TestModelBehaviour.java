@@ -77,7 +77,7 @@ public class TestModelBehaviour {
 		while(problem.getClusters().get(0).getMaxQuantity()>0){
 			problem.getClusters().forEach(c->c.setMaxQuantity(c.getMaxQuantity()-5));
 			sol = new Solver(problem, solverConfig, null, random).solve(null);
-			maxTravel = Math.max(maxTravel, sol.getCost().getTravel());
+			maxTravel = Math.max(maxTravel, sol.getCost().getCost());
 			for(int i =0 ; i<nbClusters ; i++){
 				if(i%2==0){
 					Cluster cluster = problem.getClusters().get(i);
@@ -87,8 +87,8 @@ public class TestModelBehaviour {
 			System.out.println(sol.getCost().toSingleLineSummary());
 		}
 		
-		assertTrue( maxTravel > 10 * initialCost.getTravel());
-		assertTrue(sol.getCost().getTravel() < 1.5 * initialCost.getTravel());
+		assertTrue( maxTravel > 10 * initialCost.getCost());
+		assertTrue(sol.getCost().getCost() < 1.5 * initialCost.getCost());
 	}
 
 	private Problem createProblem(Random random, int nbCustomers,

@@ -15,6 +15,7 @@ public class Customer extends HasUserIndx{
 	private double costPerUnitTime=1;	
 	private int preferredClusterIndex=-1;
 	private double travelCostMultiplier4PreferredClusterIndex=1;
+	private double preferredClusterPenaltyCost=0;
 	
 	public double getQuantity() {
 		return quantity;
@@ -48,6 +49,10 @@ public class Customer extends HasUserIndx{
 		this.costPerUnitTime = costPerUnitTime;
 	}
 
+	/**
+	 * Preferred cluster index or -1 if not defined
+	 * @return
+	 */
 	public int getPreferredClusterIndex() {
 		return preferredClusterIndex;
 	}
@@ -56,12 +61,29 @@ public class Customer extends HasUserIndx{
 		this.preferredClusterIndex = favouriteClusterIndex;
 	}
 
+	/**
+	 * The travel cost for the preferred cluster gets multiplied by this number.
+	 * e.g. if this value is 0.5, it's 50% cheaper to assign customer to prefereed cluster
+	 * @return
+	 */
 	public double getTravelCostMultiplier4PreferredClusterIndex() {
 		return travelCostMultiplier4PreferredClusterIndex;
 	}
 
 	public void setTravelCostMultiplier4PreferredClusterIndex(double travelCostMultiplier4FavouriteClusterIndex) {
 		this.travelCostMultiplier4PreferredClusterIndex = travelCostMultiplier4FavouriteClusterIndex;
+	}
+
+	/**
+	 * Cost that gets added if a customer is assigned to a cluster which is not its preferred cluster
+	 * @return
+	 */
+	public double getPreferredClusterPenaltyCost() {
+		return preferredClusterPenaltyCost;
+	}
+
+	public void setPreferredClusterPenaltyCost(double preferredClusterPenaltyCost) {
+		this.preferredClusterPenaltyCost = preferredClusterPenaltyCost;
 	}
 
 

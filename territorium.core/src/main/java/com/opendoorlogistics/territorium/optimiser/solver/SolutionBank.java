@@ -90,11 +90,11 @@ public class SolutionBank {
 				public int compare(Cost a, Cost b) {
 					double targetTravel = Double.POSITIVE_INFINITY;
 					if (solutions[0] != null) {
-						targetTravel = solutions[0].getCost().getTravel() * config.getTravelTargetImprovementFraction();
+						targetTravel = solutions[0].getCost().getCost() * config.getTravelTargetImprovementFraction();
 					}
 
-					boolean aIsBelow = a.getTravel() <= targetTravel;
-					boolean bIsBelow = b.getTravel() <= targetTravel;
+					boolean aIsBelow = a.getCost() <= targetTravel;
+					boolean bIsBelow = b.getCost() <= targetTravel;
 					if (aIsBelow && !bIsBelow) {
 						return -1;
 					}
@@ -106,8 +106,8 @@ public class SolutionBank {
 					}
 
 					// both are above... penalise the one furthest above...
-					double aViolation = a.getTravel() - targetTravel;
-					double bViolation = b.getTravel() - targetTravel;
+					double aViolation = a.getCost() - targetTravel;
+					double bViolation = b.getCost() - targetTravel;
 					if (Cost.numbersAreApproxEqual(aViolation, bViolation)) {
 						return standardComparator.compare(a, b);
 					}

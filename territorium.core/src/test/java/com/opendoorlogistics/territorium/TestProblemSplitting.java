@@ -85,7 +85,7 @@ public class TestProblemSplitting {
 				random);
 		ImmutableSolution initialSolution = ls.constructNewSolution(Cost.createApproxEqualComparator());
 		// while(ls.runSingleStep(0, Cost.createApproxEqualComparator(), solution));
-		assertTrue(initialSolution.getCost().getTravel() > 0);
+		assertTrue(initialSolution.getCost().getCost() > 0);
 
 		int svgLen = 350;
 		SVGWriter svgWriter = new SVGWriter(svgLen);

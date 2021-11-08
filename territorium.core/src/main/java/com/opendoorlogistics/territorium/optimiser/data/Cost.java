@@ -14,14 +14,14 @@ import com.opendoorlogistics.territorium.problem.ObjectWithJSONToString;
 import com.opendoorlogistics.territorium.utils.NumberUtils;
 
 public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
-	private double travel;
+	private double cost;
 	private double quantityViolation;
 	
-	public double getTravel() {
-		return travel;
+	public double getCost() {
+		return cost;
 	}
-	public void setTravel(double travel) {
-		this.travel = travel;
+	public void setCost(double travel) {
+		this.cost = travel;
 	}
 	public double getQuantityViolation() {
 		return quantityViolation;
@@ -34,7 +34,7 @@ public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
 	}
 	
 	public Cost(Cost copyThis){
-		this.travel = copyThis.getTravel();
+		this.cost = copyThis.getCost();
 		this.quantityViolation = copyThis.getQuantityViolation();
 	}
 	
@@ -50,14 +50,14 @@ public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
 	
 	@JsonIgnore
 	public void setZero(){
-		travel = 0;
+		cost = 0;
 		quantityViolation = 0;
 	}
 	
 	@JsonIgnore
 	public void setMax(){
 		quantityViolation = Double.MAX_VALUE;
-		travel = Double.MAX_VALUE;
+		cost = Double.MAX_VALUE;
 	}
 	
 	@JsonIgnore
@@ -67,25 +67,25 @@ public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
 	
 	@JsonIgnore
 	public void add(Cost cost){
-		travel += cost.travel;
+		this.cost += cost.cost;
 		quantityViolation += cost.quantityViolation;
 	}
 	
 	@JsonIgnore
 	public void subtract(Cost cost){
-		travel -= cost.travel;
+		this.cost -= cost.cost;
 		quantityViolation -= cost.quantityViolation;	
 	}
 	
 	@JsonIgnore
 	public void set(Cost cost){
-		travel = cost.travel;
+		this.cost = cost.cost;
 		quantityViolation = cost.quantityViolation;
 	}
 	
 	@JsonIgnore
 	public void negate(){
-		travel = -travel;
+		cost = -cost;
 		quantityViolation = -quantityViolation;
 	}
 	
@@ -106,7 +106,7 @@ public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
 	private static final DecimalFormat MAX_3_DP =new DecimalFormat("#.###");
 	
 	public String toSingleLineSummaryNoBrackets() {
-		return "trv=" + MAX_3_DP.format(travel) + ", qv=" + MAX_3_DP.format(quantityViolation) ;
+		return "trv=" + MAX_3_DP.format(cost) + ", qv=" + MAX_3_DP.format(quantityViolation) ;
 	}
 	
 	private final static double ROUNDOFF_FRACTION = 0.00000001;
@@ -117,7 +117,7 @@ public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
 	}
 	
 	public static boolean isApproxEqualTravelCost(Cost a, Cost b) {
-		return numbersAreApproxEqual(a.getTravel(), b.getTravel());
+		return numbersAreApproxEqual(a.getCost(), b.getCost());
 	}
 	
 	public static boolean isApproxEqualCapacityViolation(Cost a, Cost b) {
@@ -150,7 +150,7 @@ public class Cost extends ObjectWithJSONToString implements Comparable<Cost> {
 		}
 		
 		if(!isApproxEqualTravelCost(o1, o2)){
-			return o1.getTravel() < o2.getTravel() ?-1:+1;					
+			return o1.getCost() < o2.getCost() ?-1:+1;					
 		}
 		return 0;
 	}

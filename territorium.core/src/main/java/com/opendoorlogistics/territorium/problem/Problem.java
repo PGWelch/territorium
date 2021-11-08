@@ -47,11 +47,16 @@ public class Problem extends ObjectWithJSONToString{
 	public double getTravelCost(int assignedClusterIndexOrMinus1,Location clusterLocation, Customer customer) {
 		DistanceTime dt = getTravel(clusterLocation, customer);
 		double cost= dt.getDistance() * customer.getCostPerUnitDistance() + dt.getTime() * customer.getCostPerUnitTime();
-		if(assignedClusterIndexOrMinus1!=-1 && assignedClusterIndexOrMinus1==customer.getPreferredClusterIndex()) {
-			cost *= customer.getTravelCostMultiplier4PreferredClusterIndex();
+		if(assignedClusterIndexOrMinus1!=-1 && customer.getPreferredClusterIndex()!=-1) {
+			
+			// reduce the travel cost if its assigned to its preferred cluster
+			if(assignedClusterIndexOrMinus1==customer.getPreferredClusterIndex()) {
+				cost *= customer.getTravelCostMultiplier4PreferredClusterIndex();				
+			}
 		}
 		return cost;
 	}
+
 
 	/**
 	 * 

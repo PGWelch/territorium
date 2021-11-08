@@ -62,7 +62,7 @@ public class TestHeuristics {
 			void checkOk(String type, ImmutableSolution solution) {
 				// Check first solution quality is OK
 				System.out.println(type + ": " + solution.getCost());
-				assertTrue(solution.getCost().getTravel() < maxOk1stSolTravel);
+				assertTrue(solution.getCost().getCost() < maxOk1stSolTravel);
 				assertTrue(solution.getCost().getQuantityViolation() < maxOk1stSolQuantityViolation);
 			}
 		}
@@ -114,7 +114,7 @@ public class TestHeuristics {
 						Cost.isApproxEqual(startingCost, finalCost));
 			} else {
 				assertTrue(!Cost.isApproxEqual(startingCost, finalCost));
-				assertTrue(heuristicType.name() + ": Travel should have reduced", finalCost.getTravel() < 0.99 * firstZeroQuantityCost.getTravel());
+				assertTrue(heuristicType.name() + ": Travel should have reduced", finalCost.getCost() < 0.99 * firstZeroQuantityCost.getCost());
 				assertTrue(heuristicType.name() + ": Initial quantity violation should be non-zero",
 						startingCost.getQuantityViolation() > 0.0001);
 				assertEquals(heuristicType.name() + ": Final quantity violation should be 0 ", 0, finalCost.getQuantityViolation(), 0);
@@ -170,7 +170,7 @@ public class TestHeuristics {
 							.println(prefix + "after running until stagnation, " + ruinedSol.getNbUnassignedCustomers()
 									+ " unassigned customers, cost " + ruinedSol.getCost().toSingleLineSummary());
 
-					improved = ruinedSol.getCost().getTravel() < 0.99 * stagnated.getCost().getTravel();
+					improved = ruinedSol.getCost().getCost() < 0.99 * stagnated.getCost().getCost();
 
 				}
 
@@ -267,10 +267,10 @@ public class TestHeuristics {
 			// check the solution bank for the case where we have less travel but higher quantity
 			Cost cost0 = bank.getSolutionSlot(0).getCost();
 			Cost cost1 = bank.getSolutionSlot(1).getCost();
-			double targetTravel = cost0.getTravel() * bankConfig.getTravelTargetImprovementFraction();
+			double targetTravel = cost0.getCost() * bankConfig.getTravelTargetImprovementFraction();
 			assertTrue("Finishing bicomp alt soln should have less travel but more quantity violation ",
 					cost0.getQuantityViolation() == 0 && cost1.getQuantityViolation() > 0
-							&& cost1.getTravel() < targetTravel);
+							&& cost1.getCost() < targetTravel);
 
 			// check single vs bicomp
 			int diff = stdComp.compare(bank.getSolutionSlot(0).getCost(), stagnatedSingleComp.getCost());

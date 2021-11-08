@@ -30,6 +30,15 @@ final public class MutableSolution implements ImmutableSolution {
 	private final CustomerRecord[] customers;
 	private final ClusterRecord[] clusters;
 
+	private static double calcPreferredPenalty(int clusterIndex,Customer rec) {
+		int pref=rec.getPreferredClusterIndex();
+		if(pref!=-1 && pref!=clusterIndex) {
+			return rec.getPreferredClusterPenaltyCost();
+		}
+		return 0;
+	}
+	
+	
 	private class CustomerRecord {
 		private final int index;
 		private final Customer customer;
@@ -162,14 +171,17 @@ final public class MutableSolution implements ImmutableSolution {
 			}
 		}
 
+
+		
 		private void updateCentreAndCost() {
 			cost.setZero();
 			Cluster cluster = problem.getClusters().get(clusterIndex);
+			double preferredPenalty =0;
 			if (isImmutableCentre()) {
 				// set the cost using the sum from the fixed centre
-				cost.setTravel(fixedCentreTravelCostToCustomers);
+				cost.setCost(fixedCentreTravelCostToCustomers);
 			} else {
-				// find the central customer
+				// find the central customer and calculate preferred cluster costs
 				centralCustomer = null;
 				int n = assignedCustomers.size();
 				for (int i = 0; i < n; i++) {
@@ -178,24 +190,19 @@ final public class MutableSolution implements ImmutableSolution {
 							|| rec.clusterTravelCostIfCustomerIsCentre < centralCustomer.clusterTravelCostIfCustomerIsCentre) {
 						centralCustomer = rec;
 					}
+					preferredPenalty += calcPreferredPenalty(clusterIndex,rec.customer);
 				}
 
 				// set the travel cost using the central customer
 				if (centralCustomer != null) {
-					cost.setTravel(centralCustomer.clusterTravelCostIfCustomerIsCentre);
+					cost.setCost(centralCustomer.clusterTravelCostIfCustomerIsCentre);
 				}
 
 			}
 
 			// Add travel cost to the reference location if set
 			Location centre = getCentre();
-			cost.setTravel(cost.getTravel() + problem.getTargetToCentreTravelCost(centre, cluster));
-//			if (centre != null && cluster.getTargetCentre() != null) {
-//				DistanceTime dt = problem.getTravelMatrix().get(cluster.getTargetCentre().getIndex(), centre.getIndex());
-//				double refCost = cluster.getTargetCentreCostPerUnitDistance() * dt.getDistance()
-//						+ cluster.getTargetCentreCostPerUnitTime() * dt.getTime();
-//				cost.setTravel(cost.getTravel() + refCost);
-//			}
+			cost.setCost(cost.getCost() + problem.getTargetToCentreTravelCost(centre, cluster)+ preferredPenalty);
 
 			// Calculate capacity violation
 			cost.setQuantityViolation(QuantityUtils.getAbsQuantityViolation(cluster, quantity,problem.getQuantityViolationType()));
@@ -451,13 +458,23 @@ final public class MutableSolution implements ImmutableSolution {
 		outCost.setQuantityViolation(quantViolation);
 		
 		// get change in travel cost
-		double travelCost = outCost.getTravel();
-		travelCost -= problem.getTravelCost(originalClustIndx4Cust1,originalClustObj4Cust1.getCentre(), customer1);
-		travelCost -= problem.getTravelCost(originalClustIndx4Cust2,originalClustObj4Cust2.getCentre(), customer2);
-		travelCost += problem.getTravelCost(originalClustIndx4Cust1,originalClustObj4Cust1.getCentre(), customer2);
-		travelCost += problem.getTravelCost(originalClustIndx4Cust2,originalClustObj4Cust2.getCentre(), customer1);
-		outCost.setTravel(travelCost);
+		double travelCost = outCost.getCost();
+		travelCost -= getCostWithCentreUnchanged( customer1, originalClustObj4Cust1);
 		
+		travelCost -= getCostWithCentreUnchanged( customer2, originalClustObj4Cust2);
+	
+		travelCost += getCostWithCentreUnchanged( customer2, originalClustObj4Cust1);
+				
+		travelCost += getCostWithCentreUnchanged( customer1, originalClustObj4Cust2);
+				
+		outCost.setCost(travelCost);
+		
+	}
+
+	private double getCostWithCentreUnchanged( Customer customer,
+			ClusterRecord clusterRec) {
+		return problem.getTravelCost(clusterRec.clusterIndex,clusterRec.getCentre(), customer)
+				+ calcPreferredPenalty(clusterRec.clusterIndex,customer);
 	}
 
 	/**

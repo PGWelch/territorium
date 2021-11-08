@@ -74,8 +74,8 @@ public class TestSolver {
 			System.out.println("Test " + i  +" Solution " + solution.getCost().toSingleLineSummary());
 			
 			assertTrue("Should be able to find 0 quantity violation",solution.getCost().getQuantityViolation()==0);
-			assertTrue(solution.getCost().getTravel() < 24);
-			assertTrue(solution.getCost().getTravel() >18);
+			assertTrue(solution.getCost().getCost() < 24);
+			assertTrue(solution.getCost().getCost() >18);
 		}
 		
 		for(TagType tagType : TagType.values()){
