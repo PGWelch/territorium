@@ -47,13 +47,13 @@ final public class MutableSolution implements ImmutableSolution {
 		}
 
 		private int getClusterIndx() {
-			return assignedCluster != null ? assignedCluster.index : -1;
+			return assignedCluster != null ? assignedCluster.clusterIndex : -1;
 		}
 
 		@Override
 		public String toString() {
 			return "id=" + index + ", travelSum=" + clusterTravelCostIfCustomerIsCentre + ", "
-					+ (assignedCluster != null ? "cluster " + assignedCluster.index : "unassigned");
+					+ (assignedCluster != null ? "cluster " + assignedCluster.clusterIndex : "unassigned");
 		}
 
 		// public void clear(){
@@ -64,7 +64,7 @@ final public class MutableSolution implements ImmutableSolution {
 
 	private class ClusterRecord {
 		private final Cost cost = new Cost();
-		private final int index;
+		private final int clusterIndex;
 		private final Cluster cluster;
 		private double quantity;
 		private CustomerRecord centralCustomer;
@@ -73,8 +73,8 @@ final public class MutableSolution implements ImmutableSolution {
 
 		private ClusterRecord(int id) {
 			super();
-			this.index = id;
-			this.cluster = problem.getClusters().get(index);
+			this.clusterIndex = id;
+			this.cluster = problem.getClusters().get(clusterIndex);
 		}
 
 		private Location getCentre() {
@@ -90,8 +90,8 @@ final public class MutableSolution implements ImmutableSolution {
 
 		@Override
 		public String toString() {
-			return "id=" + index + ", " + cost.toString() + ", quantity=" + quantity + "/"
-					+ problem.getClusters().get(index) + ", nbCustomers=" + assignedCustomers.size()
+			return "id=" + clusterIndex + ", " + cost.toString() + ", quantity=" + quantity + "/"
+					+ problem.getClusters().get(clusterIndex) + ", nbCustomers=" + assignedCustomers.size()
 					+ (centralCustomer != null ? ", centre=" + centralCustomer.index : "");
 		}
 
@@ -131,19 +131,19 @@ final public class MutableSolution implements ImmutableSolution {
 			Collections.sort(assignedCustomers, (c1,c2)->Integer.compare(c1.index, c2.index));;
 			
 			quantity = 0;
-			int n = assignedCustomers.size();
+			int nCustomersInCluster = assignedCustomers.size();
 			fixedCentreTravelCostToCustomers = 0;
-			for (int i = 0; i < n; i++) {
+			for (int i = 0; i < nCustomersInCluster; i++) {
 				CustomerRecord ci = assignedCustomers.get(i);
 				quantity += ci.getQuantity();
 				ci.clusterTravelCostIfCustomerIsCentre = 0;
 
 				fixedCentreTravelCostToCustomers += getFixedLocationToCustomerTravelCost(ci);
 
-				for (int j = 0; j < n; j++) {
+				for (int j = 0; j < nCustomersInCluster; j++) {
 					if (i != j) {
 						CustomerRecord cj = assignedCustomers.get(j);
-						ci.clusterTravelCostIfCustomerIsCentre += problem.getTravelCost(ci.customer.getLocation(),
+						ci.clusterTravelCostIfCustomerIsCentre += problem.getTravelCost(clusterIndex,ci.customer.getLocation(),
 								cj.customer);
 					}
 				}
@@ -164,7 +164,7 @@ final public class MutableSolution implements ImmutableSolution {
 
 		private void updateCentreAndCost() {
 			cost.setZero();
-			Cluster cluster = problem.getClusters().get(index);
+			Cluster cluster = problem.getClusters().get(clusterIndex);
 			if (isImmutableCentre()) {
 				// set the cost using the sum from the fixed centre
 				cost.setTravel(fixedCentreTravelCostToCustomers);
@@ -208,37 +208,37 @@ final public class MutableSolution implements ImmutableSolution {
 
 		private double getFixedLocationToCustomerTravelCost(CustomerRecord customer) {
 			return Cluster.getFixedCentre(cluster) != null
-					? problem.getTravelCost(Cluster.getFixedCentre(cluster), customer.customer) : 0;
+					? problem.getTravelCost(clusterIndex,Cluster.getFixedCentre(cluster), customer.customer) : 0;
 		}
 
-		private void insert(CustomerRecord customer) {
+		private void insert(CustomerRecord newCustomer) {
 			if (!isValidState()) {
 				throw new RuntimeException();
 			}
 
-			if (customer.assignedCluster != null) {
+			if (newCustomer.assignedCluster != null) {
 				throw new RuntimeException();
 			}
-			customer.assignedCluster = this;
-			customer.clusterTravelCostIfCustomerIsCentre = 0;
+			newCustomer.assignedCluster = this;
+			newCustomer.clusterTravelCostIfCustomerIsCentre = 0;
 
 			// update the distances on all customer records if not using immutable centres
 			if (!isImmutableCentre()) {
 				int n = assignedCustomers.size();
 				for (int i = 0; i < n; i++) {
 					CustomerRecord other = assignedCustomers.get(i);
-					other.clusterTravelCostIfCustomerIsCentre += problem.getTravelCost(other.customer.getLocation(),
-							customer.customer);
-					customer.clusterTravelCostIfCustomerIsCentre += problem
-							.getTravelCost(customer.customer.getLocation(), other.customer);
+					other.clusterTravelCostIfCustomerIsCentre += problem.getTravelCost(clusterIndex,other.customer.getLocation(),
+							newCustomer.customer);
+					newCustomer.clusterTravelCostIfCustomerIsCentre += problem
+							.getTravelCost(clusterIndex,newCustomer.customer.getLocation(), other.customer);
 				}
 			}
 
-			fixedCentreTravelCostToCustomers += getFixedLocationToCustomerTravelCost(customer);
+			fixedCentreTravelCostToCustomers += getFixedLocationToCustomerTravelCost(newCustomer);
 
 			// add the customer including the quantity
-			assignedCustomers.add(customer);
-			quantity += customer.getQuantity();
+			assignedCustomers.add(newCustomer);
+			quantity += newCustomer.getQuantity();
 
 			updateCentreAndCost();
 		}
@@ -247,40 +247,40 @@ final public class MutableSolution implements ImmutableSolution {
 		// return problem.getTravelCost(problem.getCustomers().get(cluster.index).getLocation(), beingServed.customer);
 		// }
 
-		private void remove(CustomerRecord customer) {
+		private void remove(CustomerRecord customer2Remove) {
 			if (!isValidState()) {
 				throw new RuntimeException();
 			}
 
-			if (customer.assignedCluster != this) {
+			if (customer2Remove.assignedCluster != this) {
 				throw new RuntimeException();
 			}
 
 			// find record
-			int indx = assignedCustomers.indexOf(customer);
+			int indx = assignedCustomers.indexOf(customer2Remove);
 			if (indx == -1) {
 				throw new RuntimeException();
 			}
 
 			// remove quantity
-			quantity -= customer.getQuantity();
+			quantity -= customer2Remove.getQuantity();
 
 			// remove record
 			assignedCustomers.remove(indx);
-			customer.assignedCluster = null;
+			customer2Remove.assignedCluster = null;
 
 			// update distances for all if not using immutable centres
-			customer.clusterTravelCostIfCustomerIsCentre = 0;
+			customer2Remove.clusterTravelCostIfCustomerIsCentre = 0;
 			if (isImmutableCentre() == false) {
 				int n = assignedCustomers.size();
 				for (int i = 0; i < n; i++) {
 					CustomerRecord other = assignedCustomers.get(i);
-					other.clusterTravelCostIfCustomerIsCentre -= problem.getTravelCost(other.customer.getLocation(),
-							customer.customer);
+					other.clusterTravelCostIfCustomerIsCentre -= problem.getTravelCost(clusterIndex,other.customer.getLocation(),
+							customer2Remove.customer);
 				}
 			}
 
-			fixedCentreTravelCostToCustomers -= getFixedLocationToCustomerTravelCost(customer);
+			fixedCentreTravelCostToCustomers -= getFixedLocationToCustomerTravelCost(customer2Remove);
 
 			updateCentreAndCost();
 		}
@@ -428,34 +428,34 @@ final public class MutableSolution implements ImmutableSolution {
 		outCost.set(cost);
 		
 		// get current clusters and return if they're already in the same cluster
-		int originalCluster1 = customers[customerIndx1].getClusterIndx();
-		int originalCluster2 = customers[customerIndx2].getClusterIndx();
-		if (originalCluster1 == originalCluster2) {
+		int originalClustIndx4Cust1 = customers[customerIndx1].getClusterIndx();
+		int originalClustIndx4Cust2 = customers[customerIndx2].getClusterIndx();
+		if (originalClustIndx4Cust1 == originalClustIndx4Cust2) {
 			return;
 		}
 
-		if (originalCluster1 == -1 || originalCluster2 == -1) {
+		if (originalClustIndx4Cust1 == -1 || originalClustIndx4Cust2 == -1) {
 			throw new RuntimeException("Can only swap customers already on customers");
 		}
 
 		Customer customer1 = problem.getCustomers().get(customerIndx1);
 		Customer customer2 = problem.getCustomers().get(customerIndx2);
 
-		ClusterRecord clust1 = clusters[originalCluster1];
-		ClusterRecord clust2 = clusters[originalCluster2];
+		ClusterRecord originalClustObj4Cust1 = clusters[originalClustIndx4Cust1];
+		ClusterRecord originalClustObj4Cust2 = clusters[originalClustIndx4Cust2];
 		
 		// get change in quantity violation
 		double quantViolation = outCost.getQuantityViolation();
-		quantViolation += clust1.getQuantityViolationChangeForQuantityChange(customer2.getQuantity() - customer1.getQuantity());
-		quantViolation += clust2.getQuantityViolationChangeForQuantityChange(customer1.getQuantity() - customer2.getQuantity());
+		quantViolation += originalClustObj4Cust1.getQuantityViolationChangeForQuantityChange(customer2.getQuantity() - customer1.getQuantity());
+		quantViolation += originalClustObj4Cust2.getQuantityViolationChangeForQuantityChange(customer1.getQuantity() - customer2.getQuantity());
 		outCost.setQuantityViolation(quantViolation);
 		
 		// get change in travel cost
 		double travelCost = outCost.getTravel();
-		travelCost -= problem.getTravelCost(clust1.getCentre(), customer1);
-		travelCost -= problem.getTravelCost(clust2.getCentre(), customer2);
-		travelCost += problem.getTravelCost(clust1.getCentre(), customer2);
-		travelCost += problem.getTravelCost(clust2.getCentre(), customer1);
+		travelCost -= problem.getTravelCost(originalClustIndx4Cust1,originalClustObj4Cust1.getCentre(), customer1);
+		travelCost -= problem.getTravelCost(originalClustIndx4Cust2,originalClustObj4Cust2.getCentre(), customer2);
+		travelCost += problem.getTravelCost(originalClustIndx4Cust1,originalClustObj4Cust1.getCentre(), customer2);
+		travelCost += problem.getTravelCost(originalClustIndx4Cust2,originalClustObj4Cust2.getCentre(), customer1);
 		outCost.setTravel(travelCost);
 		
 	}

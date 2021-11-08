@@ -44,9 +44,13 @@ public class Problem extends ObjectWithJSONToString{
 		return travelMatrix;
 	}
 
-	public double getTravelCost(Location clusterLocation, Customer customer) {
+	public double getTravelCost(int assignedClusterIndexOrMinus1,Location clusterLocation, Customer customer) {
 		DistanceTime dt = getTravel(clusterLocation, customer);
-		return dt.getDistance() * customer.getCostPerUnitDistance() + dt.getTime() * customer.getCostPerUnitTime();
+		double cost= dt.getDistance() * customer.getCostPerUnitDistance() + dt.getTime() * customer.getCostPerUnitTime();
+		if(assignedClusterIndexOrMinus1!=-1 && assignedClusterIndexOrMinus1==customer.getPreferredClusterIndex()) {
+			cost *= customer.getTravelCostMultiplier4PreferredClusterIndex();
+		}
+		return cost;
 	}
 
 	/**

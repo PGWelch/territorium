@@ -68,7 +68,7 @@ public class TestHeuristics {
 		}
 		Helper helper = new Helper();
 
-		helper.checkOk("Randomised construction", constructUsingRandomisedWeighted(random, problem));
+		helper.checkOk("Randomised construction", TestUtils.constructUsingRandomisedWeighted(random, problem));
 
 		helper.checkOk("Local search construction", constructUsingLocalSearch(random, problem));
 
@@ -79,10 +79,10 @@ public class TestHeuristics {
 		for (LocalSearchHeuristic heuristicType : LocalSearchHeuristic.values()) {
 
 			// Create initial solution just using randomised weighted as this gives some initial quantity
-			ImmutableSolution initial = constructUsingRandomisedWeighted(random, problem);
+			ImmutableSolution initial = TestUtils.constructUsingRandomisedWeighted(random, problem);
 
 			// Setup local search using just the heuristic
-			LocalSearchConfig config = getSingleHeuristicConfig(heuristicType);
+			LocalSearchConfig config = TestUtils.getSingleHeuristicConfig(heuristicType);
 			MutableSolution localSearchSolution = new MutableSolution(problem, initial.getCustomersToClusters());
 
 			// Run iterations until no improvement (should happen quickly)
@@ -98,7 +98,7 @@ public class TestHeuristics {
 				if(firstZeroQuantityCost==null && localSearchSolution.getCost().getQuantityViolation()==0){
 					firstZeroQuantityCost=new Cost(localSearchSolution.getCost());
 				}
-				improved = createLocalSearch(config).runSingleStep(step, stdComparator, localSearchSolution);
+				improved = TestUtils.createLocalSearch(problem,config,random).runSingleStep(step, stdComparator, localSearchSolution);
 				System.out.println("... after step " + (step + 1) + " of " + heuristicType.name() + ": "
 						+ localSearchSolution.getCost().toSingleLineSummary());
 
@@ -123,12 +123,6 @@ public class TestHeuristics {
 
 	}
 
-	private LocalSearchConfig getSingleHeuristicConfig(LocalSearchHeuristic heuristicType) {
-		LocalSearchConfig config = new LocalSearchConfig();
-		config.setAllHeuristicsOff();
-		config.set(heuristicType, true);
-		return config;
-	}
 
 	private ImmutableSolution constructUsingLocalSearch(Random random, Problem problem) {
 		return new LocalSearch(problem, new LocalSearchConfig(),
@@ -136,13 +130,7 @@ public class TestHeuristics {
 						.constructNewSolution(Cost.createApproxEqualComparator());
 	}
 
-	private MutableSolution constructUsingRandomisedWeighted(Random random, Problem problem) {
-		int[] initialAssigned = new RandomisedWeightBasedCustomerAssignment(problem,
-				new RandomisedWeightBasedCustomerAssignment.Config(), random)
-						.run(new RandomisedCentreSelector(problem, random, new RandomisedCentreSelector.Config())
-								.run(null, null), null);
-		return new MutableSolution(problem, initialAssigned);
-	}
+
 
 	@Test
 	public void testRuinRecreateImproves() {
@@ -155,7 +143,7 @@ public class TestHeuristics {
 				}
 				// Create initial solution just using randomised weighted as this gives some initial quantity
 				// then run until the local search stagnates
-				MutableSolution stagnated = constructUsingRandomisedWeighted(random, problem);
+				MutableSolution stagnated = TestUtils.constructUsingRandomisedWeighted(random, problem);
 				runSingleLocalSearchTypeUntilStagnation(ls, stagnated);
 				assertEquals("Quantity violation should be 0 by now", 0, stagnated.getCost().getQuantityViolation(), 0);
 
@@ -173,7 +161,7 @@ public class TestHeuristics {
 							+ " unassigned customers, cost " + ruinedSol.getCost().toSingleLineSummary());
 
 					// call construction first as we won't have stops loaded
-					createLocalSearch(new LocalSearchConfig()).assignUnassignedCustomers(stdComparator, ruinedSol);
+					TestUtils.createLocalSearch(problem,new LocalSearchConfig(),random).assignUnassignedCustomers(stdComparator, ruinedSol);
 					System.out.println(prefix + "after reassigning, " + ruinedSol.getNbUnassignedCustomers()
 							+ " unassigned customers, cost " + ruinedSol.getCost().toSingleLineSummary());
 
@@ -198,14 +186,11 @@ public class TestHeuristics {
 	private void runSingleLocalSearchTypeUntilStagnation(LocalSearchHeuristic type, MutableSolution solution) {
 		int step = 0;
 		Comparator<Cost> stdComparator = Cost.createApproxEqualComparator();
-		while (createLocalSearch(getSingleHeuristicConfig(type)).runSingleStep(step++, stdComparator, solution)) {
+		while (TestUtils.createLocalSearch(problem,TestUtils.getSingleHeuristicConfig(type),random).runSingleStep(step++, stdComparator, solution)) {
 		}
 		;
 	}
 
-	private LocalSearch createLocalSearch(LocalSearchConfig config) {
-		return new LocalSearch(problem, config, new Customer2CustomerClosestNgbMatrixImpl(problem), random);
-	}
 
 	@Test
 	public void testUsingTargetTravel() {

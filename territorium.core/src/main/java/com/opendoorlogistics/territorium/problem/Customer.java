@@ -13,7 +13,9 @@ public class Customer extends HasUserIndx{
 	private Location location;
 	private double costPerUnitDistance=0;
 	private double costPerUnitTime=1;	
-
+	private int preferredClusterIndex=-1;
+	private double travelCostMultiplier4PreferredClusterIndex=1;
+	
 	public double getQuantity() {
 		return quantity;
 	}
@@ -44,6 +46,22 @@ public class Customer extends HasUserIndx{
 
 	public void setCostPerUnitTime(double costPerUnitTime) {
 		this.costPerUnitTime = costPerUnitTime;
+	}
+
+	public int getPreferredClusterIndex() {
+		return preferredClusterIndex;
+	}
+
+	public void setPreferredClusterIndex(int favouriteClusterIndex) {
+		this.preferredClusterIndex = favouriteClusterIndex;
+	}
+
+	public double getTravelCostMultiplier4PreferredClusterIndex() {
+		return travelCostMultiplier4PreferredClusterIndex;
+	}
+
+	public void setTravelCostMultiplier4PreferredClusterIndex(double travelCostMultiplier4FavouriteClusterIndex) {
+		this.travelCostMultiplier4PreferredClusterIndex = travelCostMultiplier4FavouriteClusterIndex;
 	}
 
 

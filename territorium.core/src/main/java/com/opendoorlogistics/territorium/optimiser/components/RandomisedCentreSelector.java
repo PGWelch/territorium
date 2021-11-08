@@ -80,16 +80,16 @@ public class RandomisedCentreSelector {
 		}
 		
 		// init array of customers to min travel cost to existing cluster
-		int nc = problem.getCustomers().size();
-		CustomerRec [] customers = new CustomerRec[nc];
-		for(int i=0;i< nc ; i++){
+		int nCust = problem.getCustomers().size();
+		CustomerRec [] customers = new CustomerRec[nCust];
+		for(int i=0;i< nCust ; i++){
 			customers[i] = new CustomerRec(i,problem.getCustomers().get(i));
 			customers[i].minCostToCluster = Double.POSITIVE_INFINITY;
 		}
 		for(int clusterIndx =0;clusterIndx<p;clusterIndx++){
 			if(ret[clusterIndx]!=null){
-				for(int i=0;i< nc ; i++){
-					double cost = problem.getTravelCost(ret[clusterIndx],customers[i].customer);
+				for(int i=0;i< nCust ; i++){
+					double cost = problem.getTravelCost(clusterIndx,ret[clusterIndx],customers[i].customer);
 					customers[i].minCostToCluster = Math.min(customers[i].minCostToCluster, cost);
 				}				
 			}
@@ -105,7 +105,7 @@ public class RandomisedCentreSelector {
 			
 			// sort customers by best first
 			Cluster cluster = problem.getClusters().get(clusterIndx);
-			int[] orderedCustomerIndices = sortCandidateLocations(cluster, customers);
+			int[] orderedCustomerIndices = sortCandidateLocations(clusterIndx,cluster, customers);
 			
 			// choose randomly from the best 0.5/nclusters
 			int limit = (int)Math.ceil(config.getBestCandidateSelectivity() * orderedCustomerIndices.length / p);
@@ -119,15 +119,16 @@ public class RandomisedCentreSelector {
 			ret[clusterIndx] = customers[customerIndex].customer.getLocation();
 			
 			// update the min distances
-			for(int i=0;i< nc ; i++){
-				customers[i].minCostToCluster = Math.min(customers[i].minCostToCluster, problem.getTravelCost(ret[clusterIndx],customers[i].customer));
+			for(int i=0;i< nCust ; i++){
+				customers[i].minCostToCluster = Math.min(customers[i].minCostToCluster,
+						problem.getTravelCost(clusterIndx,ret[clusterIndx],customers[i].customer));
 			}
 		}
 		
 		return ret;
 	}
 	
-	private int [] sortCandidateLocations(Cluster cluster,CustomerRec [] customers){
+	private int [] sortCandidateLocations(int clusterIndex,Cluster cluster,CustomerRec [] customers){
 		class SortRecord{
 			CustomerRec customer;
 			double normalisedClosestClusterScore;
@@ -175,7 +176,7 @@ public class RandomisedCentreSelector {
 		// get distance to ref location
 		if(cluster.getTargetCentre()!=null){
 			for(SortRecord rec:recs){
-				rec.dist2RefLocation = problem.getTravelCost(cluster.getTargetCentre(), rec.customer.customer);			
+				rec.dist2RefLocation = problem.getTravelCost(clusterIndex,cluster.getTargetCentre(), rec.customer.customer);			
 			}
 			// smallest distance comes first
 			recs.sort((o1,o2)->Double.compare(o1.dist2RefLocation, o2.dist2RefLocation));

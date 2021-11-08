@@ -30,7 +30,7 @@ public class ClusterCentreCalculator {
 	 * @param assignedCustomers
 	 * @return
 	 */
-	public static Location calculate(Problem problem,Cluster cluster, int [] assignedCustomers){
+	public static Location calculate(Problem problem,int clusterIndex,Cluster cluster, int [] assignedCustomers){
 		if(Cluster.getFixedCentre(cluster)!=null){
 			return Cluster.getFixedCentre(cluster);
 		}
@@ -46,7 +46,7 @@ public class ClusterCentreCalculator {
 			Customer ci = problem.getCustomers().get(i);
 			double cost=0;
 			for(int j:assignedCustomers){
-				cost += problem.getTravelCost(ci.getLocation(), problem.getCustomers().get(j));
+				cost += problem.getTravelCost(clusterIndex,ci.getLocation(), problem.getCustomers().get(j));
 			}
 			
 			if(cost < minCost){
@@ -80,7 +80,7 @@ public class ClusterCentreCalculator {
 		int [][] split = splitCustomersByCluster(problem, customerToClusterIndx);
 		Location [] ret = new Location[p];
 		for(int i=0;i<p;i++){
-			ret[i] = calculate(problem, problem.getClusters().get(i), split[i]);
+			ret[i] = calculate(problem,i, problem.getClusters().get(i), split[i]);
 		}
 		return ret;
 	}

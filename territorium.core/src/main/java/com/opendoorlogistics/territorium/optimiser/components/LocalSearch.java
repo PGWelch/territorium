@@ -326,8 +326,8 @@ public class LocalSearch {
 			return;
 		}
 		
-		// calculate a cluster to cluster distance matrix using the minimum distance to
-		// a point in another cluster
+		// calculate a cluster to cluster distance matrix using the minimum distance 
+		// from any point in cluster A to any point in cluster B
 		int p = problem.getClusters().size();
 		final double[][] matrix = new double[p][p];
 		for (int i = 0; i < p; i++) {
@@ -336,18 +336,18 @@ public class LocalSearch {
 		}
 
 		List<? extends Customer> customers = problem.getCustomers();
-		int nc = customers.size();
-		for (int i = 0; i < nc; i++) {
-			int clusterI = solution.getClusterIndex(i);
-			if (clusterI != -1) {
+		int nCustomers = customers.size();
+		for (int i = 0; i < nCustomers; i++) {
+			int cluster4CustomerI = solution.getClusterIndex(i);
+			if (cluster4CustomerI != -1) {
 				Customer coi = customers.get(i);
-				for (int j = 0; j < nc; j++) {
-					int clusterJ = solution.getClusterIndex(j);
-					if (clusterJ != -1) {
+				for (int j = 0; j < nCustomers; j++) {
+					int cluster4CustomerJ = solution.getClusterIndex(j);
+					if (cluster4CustomerJ != -1) {
 						Customer coj = customers.get(j);
-						double distance = problem.getTravelCost(coi.getLocation(), coj);
-						distance += problem.getTravelCost(coj.getLocation(), coi);
-						matrix[clusterI][clusterJ] = Math.min(matrix[clusterI][clusterJ], distance);
+						double distance = problem.getTravelCost(-1,coi.getLocation(), coj);
+						distance += problem.getTravelCost(-1,coj.getLocation(), coi);
+						matrix[cluster4CustomerI][cluster4CustomerJ] = Math.min(matrix[cluster4CustomerI][cluster4CustomerJ], distance);
 					}
 				}
 			}

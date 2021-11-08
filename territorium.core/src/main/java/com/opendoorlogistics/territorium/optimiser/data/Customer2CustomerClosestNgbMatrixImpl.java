@@ -39,7 +39,7 @@ public class Customer2CustomerClosestNgbMatrixImpl implements Customer2CustomerC
 			double []costs = new double[n];
 			Location from = customers.get(i).getLocation();
 			for(int j =0 ; j<n;j++){
-				costs[j] = problem.getTravelCost(from, customers.get(j));
+				costs[j] = problem.getTravelCost(-1,from, customers.get(j));
 			}
 			
 			tmpList.sort((k,l)->Double.compare(costs[k],costs[l]));

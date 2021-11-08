@@ -27,29 +27,29 @@ public class CustomerClusterCostMatrix extends ObjectWithJSONToString{
 	
 	public CustomerClusterCostMatrix(Problem problem, Location [] clusterCentres) {
 		this.problem = problem;
-		int nc = problem.getCustomers().size();
+		int nCust = problem.getCustomers().size();
 
-		costs = new double[nc][];
+		costs = new double[nCust][];
 		
 		int p = clusterCentres.length;
 
-		for (int customerIndx = 0; customerIndx < nc; customerIndx++) {
+		for (int customerIndx = 0; customerIndx < nCust; customerIndx++) {
 			Customer customer = problem.getCustomers().get(customerIndx);
 			costs[customerIndx] = new double[p];
 			for (int clusterIndx = 0; clusterIndx < p; clusterIndx++) {
 				costs[customerIndx][clusterIndx] = Double.POSITIVE_INFINITY;
 				if (clusterCentres[clusterIndx] != null) {
 					costs[customerIndx][clusterIndx] = problem
-							.getTravelCost(clusterCentres[clusterIndx], customer);
+							.getTravelCost(clusterIndx,clusterCentres[clusterIndx], customer);
 				}
 			}
 		}
 	}
 
-	@JsonIgnore
-	public double cost(int customerIndx, int clusterIndx){
-		return costs[clusterIndx][clusterIndx];
-	}
+//	@JsonIgnore
+//	public double cost(int customerIndx, int clusterIndx){
+//		return costs[clusterIndx][clusterIndx];
+//	}
 
 	public double[][] getCosts() {
 		return costs;
@@ -73,11 +73,11 @@ public class CustomerClusterCostMatrix extends ObjectWithJSONToString{
 	}
 	
 	public void updateClusterCentre(int clusterIndx, Location location){
-		int nc=problem.getCustomers().size();
-		for (int customerIndx = 0; customerIndx < nc; customerIndx++) {
+		int nCust=problem.getCustomers().size();
+		for (int customerIndx = 0; customerIndx < nCust; customerIndx++) {
 			if (location!= null) {
 				costs[customerIndx][clusterIndx] = problem
-						.getTravelCost(location, problem.getCustomers().get(customerIndx));
+						.getTravelCost(clusterIndx,location, problem.getCustomers().get(customerIndx));
 			}else{
 				costs[customerIndx][clusterIndx] = Double.POSITIVE_INFINITY;
 			}
