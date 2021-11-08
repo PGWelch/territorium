@@ -43,17 +43,21 @@ import com.opendoorlogistics.territorium.optimiser.solver.SolutionBank.SolutionB
 import com.opendoorlogistics.territorium.problem.Problem;
 
 public class TestHeuristics {
-	private Random random = new Random(123);
-	private Problem problem = buildProblem(random);
 
 	private static Problem buildProblem(Random random) {
+		return buildProblem(random, 0.2);
+	}
+	
+	private static Problem buildProblem(Random random, double capacityDeltaTolerance) {
 		return new XYMinMaxQuantitiesHeterogeneousClusters().setMaxCustomerQuantity(100).setMinCustomerQuantity(1).setNbCustomers(100)
-				.setNbClusters(10).setCustomerQuantityDistributionRandPower(3).setTotalClusterCapacityMultiplier(1.2)
-				.setTotalClusterMinQuantityMultiplier(0.8).build(random);
+				.setNbClusters(10).setCustomerQuantityDistributionRandPower(3).setTotalClusterCapacityMultiplier(1 + capacityDeltaTolerance)
+				.setTotalClusterMinQuantityMultiplier(1 - capacityDeltaTolerance).build(random);
 	}
 
 	@Test
 	public void testInitialConstructionOk() {
+		Random random = new Random(123);
+		Problem problem = buildProblem(random);
 
 		double maxOk1stSolQuantityViolation = 35;
 		double maxOk1stSolTravel = 50;
@@ -76,6 +80,9 @@ public class TestHeuristics {
 
 	@Test
 	public void testLocalSearchImproves() {
+		Random random = new Random(123);
+		Problem problem = buildProblem(random, 0.15);
+		
 		for (LocalSearchHeuristic heuristicType : LocalSearchHeuristic.values()) {
 
 			// Create initial solution just using randomised weighted as this gives some initial quantity
@@ -124,7 +131,7 @@ public class TestHeuristics {
 	}
 
 
-	private ImmutableSolution constructUsingLocalSearch(Random random, Problem problem) {
+	private static ImmutableSolution constructUsingLocalSearch(Random random, Problem problem) {
 		return new LocalSearch(problem, new LocalSearchConfig(),
 				new Customer2CustomerClosestNgbMatrixImpl(problem), random)
 						.constructNewSolution(Cost.createApproxEqualComparator());
@@ -134,6 +141,8 @@ public class TestHeuristics {
 
 	@Test
 	public void testRuinRecreateImproves() {
+		Random random = new Random(123);
+		Problem problem = buildProblem(random);
 		Comparator<Cost> stdComparator = Cost.createApproxEqualComparator();
 
 		for (RuinType ruinType : RuinType.values()) {
@@ -144,7 +153,7 @@ public class TestHeuristics {
 				// Create initial solution just using randomised weighted as this gives some initial quantity
 				// then run until the local search stagnates
 				MutableSolution stagnated = TestUtils.constructUsingRandomisedWeighted(random, problem);
-				runSingleLocalSearchTypeUntilStagnation(ls, stagnated);
+				runSingleLocalSearchTypeUntilStagnation(problem,ls, stagnated,random);
 				assertEquals("Quantity violation should be 0 by now", 0, stagnated.getCost().getQuantityViolation(), 0);
 
 				// Now try 25 ruins checking we get a genuine improvement
@@ -165,7 +174,7 @@ public class TestHeuristics {
 					System.out.println(prefix + "after reassigning, " + ruinedSol.getNbUnassignedCustomers()
 							+ " unassigned customers, cost " + ruinedSol.getCost().toSingleLineSummary());
 
-					runSingleLocalSearchTypeUntilStagnation(ls, ruinedSol);
+					runSingleLocalSearchTypeUntilStagnation(problem,ls, ruinedSol,random);
 					System.out
 							.println(prefix + "after running until stagnation, " + ruinedSol.getNbUnassignedCustomers()
 									+ " unassigned customers, cost " + ruinedSol.getCost().toSingleLineSummary());
@@ -183,7 +192,8 @@ public class TestHeuristics {
 		// then do some ruin/recreates and check we get better solutions
 	}
 
-	private void runSingleLocalSearchTypeUntilStagnation(LocalSearchHeuristic type, MutableSolution solution) {
+	private static void runSingleLocalSearchTypeUntilStagnation(Problem problem,
+			LocalSearchHeuristic type, MutableSolution solution, Random random) {
 		int step = 0;
 		Comparator<Cost> stdComparator = Cost.createApproxEqualComparator();
 		while (TestUtils.createLocalSearch(problem,TestUtils.getSingleHeuristicConfig(type),random).runSingleStep(step++, stdComparator, solution)) {
@@ -194,7 +204,8 @@ public class TestHeuristics {
 
 	@Test
 	public void testUsingTargetTravel() {
-
+		Random random = new Random(123);
+		Problem problem = buildProblem(random);
 		SolutionBankConfig bankConfig = new SolutionBankConfig();
 		bankConfig.setTravelTarget(true);
 		bankConfig.setTravelTargetImprovementFraction(0.999999);
